@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AlocaPro</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="logo.png">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo-icon">
+                    <img src="logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <div class="sidebar-logo-text">AlocaPro</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-label">Operação</div>
+                <a class="nav-item" onclick="switchSection('mapa', this)">
+                    <i class="bi bi-map"></i> Mapa Alojamentos
+                </a>
+                <a class="nav-item" onclick="switchSection('mapa-republicas', this)">
+                    <i class="bi bi-map-fill"></i> Mapa Repúblicas
+                </a>
+                <a class="nav-item" onclick="switchSection('checkin', this)">
+                    <i class="bi bi-box-arrow-in-right"></i> Check-in
+                </a>
+                <a class="nav-item" onclick="switchSection('checkout', this)">
+                    <i class="bi bi-box-arrow-right"></i> Check-out
+                </a>
+
+                <div class="sidebar-label">Cadastros</div>
+                <a class="nav-item" onclick="switchSection('funcionarios', this)">
+                    <i class="bi bi-people"></i> Funcionários
+                </a>
+                <a class="nav-item" onclick="switchSection('quartos', this)">
+                    <i class="bi bi-door-open"></i> Alojamentos
+                </a>
+                <a class="nav-item" onclick="switchSection('republicas', this)">
+                    <i class="bi bi-house-door"></i> Repúblicas
+                </a>
+
+                <div class="sidebar-label">Indicadores e Relatórios</div>
+                <a class="nav-item active" onclick="switchSection('dashboard', this)">
+                    <i class="bi bi-grid-1x2"></i> Dashboard
+                </a>
+                <a class="nav-item" onclick="switchSection('historico', this)">
+                    <i class="bi bi-clock-history"></i> Histórico
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-name" id="user-name">Carregando...</span>
+                    <span>Admin</span>
+                </div>
+                <button class="btn-logout" id="btn-logout">
+                    <i class="bi bi-arrow-clockwise" style="transform: rotate(90deg);"></i> Sair
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- SEC: DASHBOARD -->
+            <section id="sec-dashboard" class="content-section active">
+                <div class="page-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Dashboard</h1>
+                        <p class="page-subtitle">Visão geral em tempo real</p>
+                    </div>
+                    <div style="width: 220px;">
+                        <select class="form-select form-select-sm shadow-sm" id="dashboard-filter"
+                            onchange="atualizarDashboard()">
+                            <option value="todos">Todos os Locais</option>
+                            <option value="alojamentos">Alojamentos</option>
+                            <option value="republicas">Repúblicas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="kpi-row">
+                    <div class="card kpi-card">
+                        <div>
+                            <div class="kpi-title">Total de Vagas</div>
+                            <div class="kpi-value" id="kpi-total">0</div>
+                        </div>
+                        <div class="kpi-icon bg-blue-light"><i class="bi bi-hdd-stack"></i></div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div>
+                            <div class="kpi-title">Ocupadas</div>
+                            <div class="kpi-value text-dark" id="kpi-ocupadas">0</div>
+                        </div>
+                        <div class="kpi-icon bg-red-light"><i class="bi bi-people"></i></div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div>
+                            <div class="kpi-title">Disponíveis</div>
+                            <div class="kpi-value text-dark" id="kpi-disponiveis">0</div>
+                        </div>
+                        <div class="kpi-icon bg-green-light"><i class="bi bi-check-circle"></i></div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div>
+                            <div class="kpi-title">Taxa de Ocupação</div>
+                            <div class="kpi-value" id="kpi-taxa">0%</div>
+                        </div>
+                        <div class="kpi-icon bg-blue-light"><i class="bi bi-graph-up"></i></div>
+                    </div>
+                </div>
+
+                <div class="card p-4 border-0">
+                    <h5 class="mb-4 fw-bold">Resumo</h5>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <div class="text-muted small mb-1" id="resumo-label">Alojamentos e Repúblicas</div>
+                            <div class="fs-4 fw-bold" id="resumo-quartos">0</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small mb-1">Total de funcionários</div>
+                            <div class="fs-4 fw-bold" id="resumo-funcionarios">0</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Ocupação geral</span>
+                            <span class="fw-bold text-dark" id="resumo-ocupacao-texto">0/0</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar-fill" id="resumo-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEC: MAPA -->
+            <section id="sec-mapa" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Mapa de Alojamentos</h1>
+                    <p class="page-subtitle">Visualização em tempo real dos alojamentos por bloco</p>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Filtrar por Bloco</label>
+                        <select class="form-select shadow-sm" id="filter-mapa-bloco" onchange="renderizarMapaAlojamentos()">
+                            <option value="todos">Todos os Blocos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="map-legend">
+                    <div class="legend-item"><span class="dot dot-available"></span> Disponível</div>
+                    <div class="legend-item"><span class="dot dot-almost"></span> Quase cheio</div>
+                    <div class="legend-item"><span class="dot dot-full"></span> Lotado</div>
+                </div>
+
+                <div id="rooms-container">
+                    <!-- Renderizado via Javascript -->
+                    <div class="text-center py-5 text-muted">Carregando mapa...</div>
+                </div>
+            </section>
+
+            <!-- SEC: MAPA REPUBLICAS -->
+            <section id="sec-mapa-republicas" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Mapa de Repúblicas</h1>
+                    <p class="page-subtitle">Visualização em tempo real das repúblicas</p>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Filtrar por República</label>
+                        <select class="form-select shadow-sm" id="filter-mapa-republica" onchange="renderizarMapaRepublicas()">
+                            <option value="todos">Todas as Repúblicas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="map-legend">
+                    <div class="legend-item"><span class="dot dot-available"></span> Disponível</div>
+                    <div class="legend-item"><span class="dot dot-almost"></span> Quase cheio</div>
+                    <div class="legend-item"><span class="dot dot-full"></span> Lotado</div>
+                </div>
+
+                <div id="reps-container">
+                    <!-- Renderizado via Javascript -->
+                    <div class="text-center py-5 text-muted">Carregando mapa...</div>
+                </div>
+            </section>
+
+            <!-- SEC: CHECK-IN -->
+            <section id="sec-checkin" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Check-in</h1>
+                    <p class="page-subtitle">Registre a entrada de um funcionário em um quarto</p>
+                </div>
+
+                <div class="card form-card border-0">
+                    <form id="form-checkin">
+                        <div class="mb-4">
+                            <label class="form-label">Funcionário</label>
+                            <select class="form-select" id="checkin-funcionario" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Alojamento / República</label>
+                            <select class="form-select" id="checkin-quarto" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="btn-save-checkin">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Confirmar Check-in
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SEC: CHECK-OUT -->
+            <section id="sec-checkout" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Check-out</h1>
+                    <p class="page-subtitle">Registre a saída e libere a vaga automaticamente</p>
+                </div>
+
+                <div class="card form-card border-0">
+                    <form id="form-checkout">
+                        <div class="mb-4">
+                            <label class="form-label">Alocação ativa</label>
+                            <select class="form-select" id="checkout-alocacao" required>
+                                <option value="">Selecione um funcionário...</option>
+                            </select>
+                        </div>
+
+                        <div id="checkout-info-container" class="mt-4 d-none">
+                            <div class="alert alert-info py-2 px-3 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small">Dias hospedados:</span>
+                                    <strong id="tab-co-dias-hospedados">0 dia(s)</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small">Valor Diária:</span>
+                                    <strong id="tab-co-valor-diaria">R$ 0,00</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center border-top border-info pt-2 mt-2">
+                                    <span class="small fw-bold">Valor Total:</span>
+                                    <strong id="tab-co-valor-total" class="fs-5 text-primary">R$ 0,00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100" id="btn-save-checkout">
+                            <i class="bi bi-box-arrow-right me-2"></i> Confirmar Check-out
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SEC: QUARTOS -->
+            <section id="sec-quartos" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Alojamentos</h1>
+                    <p class="page-subtitle">Gerencie os alojamentos</p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card form-card border-0 w-100 p-4">
+                            <h5 class="mb-4 fw-bold fs-6">Novo Alojamento</h5>
+                            <form id="form-quarto">
+                                <input type="hidden" id="quarto-id">
+                                <div class="mb-3">
+                                    <label class="form-label">Nome/Número do Alojamento</label>
+                                    <input type="text" class="form-control" id="quarto-nome" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Bloco</label>
+                                        <input type="text" class="form-control" id="quarto-bloco" required>
+                                    </div>
+                                    <div class="col-6 mb-4">
+                                        <label class="form-label">Capacidade</label>
+                                        <select class="form-select" id="quarto-capacidade" required>
+                                            <option value="1">1 Pessoa</option>
+                                            <option value="2">2 Pessoas</option>
+                                            <option value="3">3 Pessoas</option>
+                                            <option value="4">4 Pessoas</option>
+                                            <option value="5">5 Pessoas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária (R$)</label>
+                                        <input type="number" class="form-control" id="quarto-diaria" step="0.01"
+                                            value="0.00" required>
+                                    </div>
+                                    <div class="col-12 mb-4">
+                                        <label class="form-label">Gênero Permitido</label>
+                                        <select class="form-select" id="quarto-sexo" required>
+                                            <option value="A">Ambos (Misto)</option>
+                                            <option value="M">Masculino</option>
+                                            <option value="F">Feminino</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="quarto-status" onchange="toggleMotivoQuarto()">
+                                            <option value="true">Ativo</option>
+                                            <option value="false">Inativo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-4 d-none" id="div-motivo-quarto">
+                                        <label class="form-label">Motivo da Inativação</label>
+                                        <textarea class="form-control" id="quarto-motivo" rows="2"
+                                            placeholder="Ex: Manutenção, Reforma..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary w-100" id="btn-save-quarto">
+                                        Cadastrar Alojamento
+                                    </button>
+                                    <button type="button" class="btn btn-light w-100 d-none" id="btn-cancel-quarto"
+                                        onclick="cancelarEdicaoQuarto()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card border-0 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold fs-6 mb-0">Alojamentos Cadastrados</h5>
+                                <div style="width: 250px;">
+                                    <input type="text" class="form-control form-control-sm" id="search-quartos"
+                                        placeholder="Buscar alojamento..." onkeyup="handleSearchQuartos()">
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 rounded-start">Nome</th>
+                                            <th class="border-0">Bloco</th>
+                                            <th class="border-0">Gênero</th>
+                                            <th class="border-0">Diária</th>
+                                            <th class="border-0">Capacidade</th>
+                                            <th class="border-0">Status</th>
+                                            <th class="border-0 rounded-end text-end">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lista-quartos-tbody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">Nenhum alojamento
+                                                cadastrado.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav class="mt-4">
+                                <ul class="pagination pagination-sm justify-content-end mb-0" id="pagination-quartos">
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEC: REPUBLICAS -->
+            <section id="sec-republicas" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Repúblicas</h1>
+                    <p class="page-subtitle">Gerencie as repúblicas cadastradas</p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card form-card border-0 w-100 p-4">
+                            <h5 class="mb-4 fw-bold fs-6">Nova República</h5>
+                            <form id="form-republica">
+                                <input type="hidden" id="republica-id">
+                                <div class="mb-3">
+                                    <label class="form-label">Nome da República</label>
+                                    <input type="text" class="form-control" id="republica-nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nome/Número do Quarto</label>
+                                    <input type="text" class="form-control" id="republica-quarto" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Endereço</label>
+                                    <input type="text" class="form-control" id="republica-endereco" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Bloco/Referência</label>
+                                        <input type="text" class="form-control" id="republica-bloco" required>
+                                    </div>
+                                    <div class="col-6 mb-4">
+                                        <label class="form-label">Capacidade</label>
+                                        <select class="form-select" id="republica-capacidade" required>
+                                            <option value="1">1 Pessoa</option>
+                                            <option value="2">2 Pessoas</option>
+                                            <option value="3">3 Pessoas</option>
+                                            <option value="4">4 Pessoas</option>
+                                            <option value="5">5 Pessoas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária (R$)</label>
+                                        <input type="number" class="form-control" id="republica-diaria" step="0.01"
+                                            value="0.00" required>
+                                    </div>
+                                    <div class="col-12 mb-4">
+                                        <label class="form-label">Gênero Permitido</label>
+                                        <select class="form-select" id="republica-sexo" required>
+                                            <option value="A">Ambos (Misto)</option>
+                                            <option value="M">Masculino</option>
+                                            <option value="F">Feminino</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="republica-status"
+                                            onchange="toggleMotivoRepublica()">
+                                            <option value="true">Ativo</option>
+                                            <option value="false">Inativo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-4 d-none" id="div-motivo-republica">
+                                        <label class="form-label">Motivo da Inativação</label>
+                                        <textarea class="form-control" id="republica-motivo" rows="2"
+                                            placeholder="Ex: Manutenção, Reforma..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary w-100" id="btn-save-republica">
+                                        Cadastrar República
+                                    </button>
+                                    <button type="button" class="btn btn-light w-100 d-none" id="btn-cancel-republica"
+                                        onclick="cancelarEdicaoRepublica()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card border-0 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold fs-6 mb-0">Repúblicas Cadastradas</h5>
+                                <div style="width: 250px;">
+                                    <input type="text" class="form-control form-control-sm" id="search-republicas"
+                                        placeholder="Buscar república..." onkeyup="handleSearchRepublicas()">
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 rounded-start">República</th>
+                                            <th class="border-0">Quarto</th>
+                                            <th class="border-0">Endereço</th>
+                                            <th class="border-0">Gênero</th>
+                                            <th class="border-0">Diária</th>
+                                            <th class="border-0">Capacidade</th>
+                                            <th class="border-0">Status</th>
+                                            <th class="border-0 rounded-end text-end">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lista-republicas-tbody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">Nenhuma república
+                                                cadastrada.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav class="mt-4">
+                                <ul class="pagination pagination-sm justify-content-end mb-0"
+                                    id="pagination-republicas">
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEC: FUNCIONARIOS -->
+            <section id="sec-funcionarios" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Funcionários</h1>
+                    <p class="page-subtitle">Gerencie os funcionários da empresa</p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card form-card border-0 w-100 p-4">
+                            <h5 class="mb-4 fw-bold fs-6">Novo Funcionário</h5>
+                            <form id="form-funcionario">
+                                <input type="hidden" id="func-id">
+                                <div class="mb-3">
+                                    <label class="form-label">Nome Completo</label>
+                                    <input type="text" class="form-control" id="func-nome" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">CPF</label>
+                                        <input type="text" class="form-control" id="func-cpf" required>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Gênero</label>
+                                        <select class="form-select" id="func-sexo" required>
+                                            <option value="M">Masculino</option>
+                                            <option value="F">Feminino</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-4">
+                                        <label class="form-label">Telefone (WhatsApp)</label>
+                                        <input type="text" class="form-control" id="func-telefone"
+                                            placeholder="Ex: 5511999999999" required>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary w-100" id="btn-save-func">
+                                        Cadastrar Funcionário
+                                    </button>
+                                    <button type="button" class="btn btn-light w-100 d-none" id="btn-cancel-func"
+                                        onclick="cancelarEdicaoFuncionario()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card border-0 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold fs-6 mb-0">Funcionários Cadastrados</h5>
+                                <div style="width: 250px;">
+                                    <input type="text" class="form-control form-control-sm" id="search-funcs"
+                                        placeholder="Buscar nome ou CPF..." onkeyup="handleSearchFuncs()">
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 rounded-start">Nome</th>
+                                            <th class="border-0">CPF</th>
+                                            <th class="border-0">Gênero</th>
+                                            <th class="border-0">Telefone</th>
+                                            <th class="border-0">Status</th>
+                                            <th class="border-0 rounded-end text-end">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lista-funcionarios-tbody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">Nenhum funcionário
+                                                cadastrado.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav class="mt-4">
+                                <ul class="pagination pagination-sm justify-content-end mb-0" id="pagination-funcs">
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEC: HISTÓRICO -->
+            <section id="sec-historico" class="content-section">
+                <div class="page-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Histórico de Estadias</h1>
+                        <p class="page-subtitle">Consulte o registro de todos os check-outs e faturamentos</p>
+                    </div>
+                </div>
+
+                <div class="card p-4 border-0 mb-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        <h5 class="fw-bold fs-6 mb-0">Relatório de Fechamentos</h5>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="input-group input-group-sm" style="width: 150px;">
+                                <span class="input-group-text bg-light text-muted border-end-0"
+                                    title="Data Inicial (Entrada)"><i class="bi bi-calendar-event"></i></span>
+                                <input type="date" id="filter-data-inicial" class="form-control border-start-0 ps-0"
+                                    onchange="handleSearchHistorico()">
+                            </div>
+                            <span class="text-muted small">até</span>
+                            <div class="input-group input-group-sm" style="width: 150px;">
+                                <span class="input-group-text bg-light text-muted border-end-0"
+                                    title="Data Final (Saída)"><i class="bi bi-calendar-check"></i></span>
+                                <input type="date" id="filter-data-final" class="form-control border-start-0 ps-0"
+                                    onchange="handleSearchHistorico()">
+                            </div>
+                            <div class="input-group input-group-sm ms-2" style="width: 250px;">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="search-historico" class="form-control border-start-0 ps-0"
+                                    placeholder="Buscar por nome do funcionário" onkeyup="handleSearchHistorico()">
+                            </div>
+                            <button class="btn btn-sm btn-success ms-2" onclick="exportarHistoricoExcel()">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Exportar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0 rounded-start">Funcionário</th>
+                                    <th class="border-0">Local Hospedado</th>
+                                    <th class="border-0">Entrada</th>
+                                    <th class="border-0">Saída</th>
+                                    <th class="border-0 rounded-end text-end">Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-historico-tbody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Carregando histórico...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Paginação -->
+                    <nav class="mt-4">
+                        <ul class="pagination pagination-sm justify-content-end mb-0" id="pagination-historico"></ul>
+                    </nav>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal Check-in Rápido -->
+    <div class="modal fade" id="modalCheckinRapido" tabindex="-1" aria-labelledby="modalCheckinRapidoLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalCheckinRapidoLabel">Check-in Rápido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-4">Alocar na vaga livre do quarto <strong id="cr-quarto-nome"></strong>.</p>
+                    <form id="form-checkin-rapido">
+                        <input type="hidden" id="cr-quarto-id">
+                        <input type="hidden" id="cr-tipo-local">
+                        <div class="mb-4">
+                            <label class="form-label">Selecione o Funcionário</label>
+                            <select class="form-select" id="cr-funcionario" required>
+                                <option value="">Carregando...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="btn-save-cr">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Confirmar Alocação
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Check-out Rápido -->
+    <div class="modal fade" id="modalCheckoutRapido" tabindex="-1" aria-labelledby="modalCheckoutRapidoLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger" id="modalCheckoutRapidoLabel">Confirmar Check-out</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Tem certeza que deseja registrar a saída de <strong
+                            id="co-funcionario-nome"></strong> do local <strong id="co-quarto-nome"></strong>?</p>
+                    <div class="alert alert-info py-2 px-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small">Dias hospedados:</span>
+                            <strong id="co-dias-hospedados">0 dias</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small">Valor Diária:</span>
+                            <strong id="co-valor-diaria">R$ 0,00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-top border-info pt-2 mt-2">
+                            <span class="small fw-bold">Valor Total:</span>
+                            <strong id="co-valor-total" class="fs-5 text-primary">R$ 0,00</strong>
+                        </div>
+                    </div>
+                    <form id="form-checkout-rapido">
+                        <input type="hidden" id="co-alocacao-id">
+                        <input type="hidden" id="co-valor-total-input">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light w-100" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger w-100" id="btn-save-co">
+                                <i class="bi bi-box-arrow-right me-2"></i> Confirmar Saída
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
+            aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-message">Mensagem aqui</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
