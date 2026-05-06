@@ -35,6 +35,9 @@
 ### 🔐 Segurança do Usuário
 *   **Gestão de Senhas:** Funcionalidade integrada para que cada usuário altere sua própria senha de acesso diretamente pelo dashboard.
 
+### 🎨 Experiência do Usuário (UX)
+*   **Navegação Inteligente:** Barra lateral com rolagem customizada, garantindo acesso a todos os menus em qualquer resolução de tela ou tamanho de janela.
+
 ---
 
 ## 🛠️ Tecnologias Utilizadas
