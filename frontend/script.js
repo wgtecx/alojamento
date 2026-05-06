@@ -54,6 +54,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (userData) {
+        // Verificação de Segurança: Usuário Ativo
+        if (userData.ativo === false) {
+            alert('Sua conta de usuário está desativada. Por favor, entre em contato com o administrador.');
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Verificação de Segurança: Empresa Ativa
+        if (userData.id_empresa) {
+            const { data: empresaData } = await supabaseClient
+                .from('empresa')
+                .select('ativo')
+                .eq('id', userData.id_empresa)
+                .single();
+
+            if (empresaData && empresaData.ativo === false) {
+                alert('A sua empresa está inativada no sistema. Por favor, entre em contato com o suporte.');
+                await supabaseClient.auth.signOut();
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+
         currentUser = userData;
         currentCompanyId = userData.id_empresa;
         userNameEl.textContent = `${userData.nome}`;
