@@ -12,6 +12,8 @@ let republicas = [];
 let funcionarios = [];
 let alocacoesAtivas = [];
 let alocacoesHistorico = [];
+let empresas = [];
+let todosUsuarios = [];
 
 // Paginação e Filtros
 let currentPageQuartos = 1;
@@ -22,6 +24,8 @@ let currentPageFuncs = 1;
 let searchFuncs = '';
 let currentPageHistorico = 1;
 let searchHistorico = '';
+let searchEmpresas = '';
+let searchUsuarios = '';
 const itemsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -33,16 +37,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 2. Buscar dados do usuário logado para obter a empresa
-    const { data: userData, error: userError } = await supabaseClient
+    // Tentamos primeiro pelo ID (Auth UUID) e depois pelo Email (fallback para usuários criados via form)
+    let { data: userData } = await supabaseClient
         .from('usuario')
         .select('*')
         .eq('id', session.user.id)
         .single();
 
+    if (!userData) {
+        const { data: userDataByEmail } = await supabaseClient
+            .from('usuario')
+            .select('*')
+            .ilike('email', session.user.email)
+            .single();
+        userData = userDataByEmail;
+    }
+
     if (userData) {
         currentUser = userData;
         currentCompanyId = userData.id_empresa;
         userNameEl.textContent = `${userData.nome}`;
+        
+        // Atualizar perfil no rodapé da barra lateral (removendo o "Admin" fixo)
+        const userProfileEl = document.querySelector('.user-info span:last-child');
+        if (userProfileEl) {
+            userProfileEl.textContent = userData.perfil.charAt(0).toUpperCase() + userData.perfil.slice(1).toLowerCase();
+        }
+
+        // Exibir seção de admin se o perfil for admin (case-insensitive)
+        if (userData.perfil && userData.perfil.toLowerCase() === 'admin') {
+            const adminSection = document.getElementById('admin-sidebar-section');
+            if (adminSection) adminSection.classList.remove('d-none');
+        }
     } else {
         userNameEl.textContent = session.user.email;
     }
@@ -62,6 +88,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('checkout-alocacao').addEventListener('change', atualizarInfoCheckout);
     document.getElementById('form-checkin-rapido').addEventListener('submit', handleCheckinRapido);
     document.getElementById('form-checkout-rapido').addEventListener('submit', handleCheckoutRapido);
+    
+    // Eventos Admin
+    const formEmp = document.getElementById('form-empresa');
+    if (formEmp) formEmp.addEventListener('submit', handleNovoEmpresa);
+    const formUser = document.getElementById('form-usuario-admin');
+    if (formUser) formUser.addEventListener('submit', handleNovoUsuario);
+    const formSenha = document.getElementById('form-alterar-senha');
+    if (formSenha) formSenha.addEventListener('submit', handleAlterarSenha);
 
     // Carregar dados iniciais
     await loadData();
@@ -88,35 +122,61 @@ window.switchSection = function(sectionId, element) {
     if (sectionId === 'checkin') popularSelectsCheckin();
     if (sectionId === 'checkout') popularSelectsCheckout();
     if (sectionId === 'historico') renderizarListaHistorico();
+    if (sectionId === 'empresas') renderizarListaEmpresas();
+    if (sectionId === 'usuarios') {
+        popularSelectEmpresaUsuario();
+        renderizarListaUsuarios();
+    }
 }
 
 // Função centralizada para carregar todos os dados
 async function loadData() {
     try {
+        if (!currentCompanyId) return;
+
         // Buscar Quartos (Alojamentos)
-        const { data: quartosData } = await supabaseClient.from('quarto').select('*').order('bloco').order('nome');
+        let qryQuartos = supabaseClient.from('quarto').select('*').eq('id_empresa', currentCompanyId).order('bloco').order('nome');
+        const { data: quartosData, error: qError } = await qryQuartos;
+        if (qError) throw qError;
         quartos = quartosData || [];
 
         // Buscar Repúblicas
-        const { data: repData } = await supabaseClient.from('republica').select('*').order('nome');
+        let qryReps = supabaseClient.from('republica').select('*').eq('id_empresa', currentCompanyId).order('nome');
+        const { data: repData, error: rError } = await qryReps;
+        if (rError) throw rError;
         republicas = repData || [];
 
         // Buscar Funcionários
-        const { data: funcData } = await supabaseClient.from('funcionario').select('*').order('nome');
+        let qryFuncs = supabaseClient.from('funcionario').select('*').eq('id_empresa', currentCompanyId).order('nome');
+        const { data: funcData, error: fError } = await qryFuncs;
+        if (fError) throw fError;
         funcionarios = funcData || [];
 
         // Buscar Alocações Ativas (sem data_checkout)
-        const { data: alocData } = await supabaseClient.from('alocacao').select('*').is('data_checkout', null);
+        let qryAloc = supabaseClient.from('alocacao').select('*').eq('id_empresa', currentCompanyId).is('data_checkout', null);
+        const { data: alocData, error: aError } = await qryAloc;
+        if (aError) throw aError;
         alocacoesAtivas = alocData || [];
 
-        // Buscar Alocações Históricas (com data_checkout)
-        const { data: histData } = await supabaseClient.from('alocacao').select('*').not('data_checkout', 'is', null).order('data_checkout', {ascending: false});
+        // Buscar Alocações Históricas
+        let qryHist = supabaseClient.from('alocacao').select('*').eq('id_empresa', currentCompanyId).not('data_checkout', 'is', null).order('data_checkout', {ascending: false});
+        const { data: histData, error: hError } = await qryHist;
+        if (hError) throw hError;
         alocacoesHistorico = histData || [];
+
+        // Buscar Dados de Admin (se admin)
+        if (currentUser && currentUser.perfil === 'admin') {
+            const { data: empresasData } = await supabaseClient.from('empresa').select('*').order('nome');
+            empresas = empresasData || [];
+
+            const { data: usuariosData } = await supabaseClient.from('usuario').select('*').order('nome');
+            todosUsuarios = usuariosData || [];
+        }
 
         popularFiltrosMapa();
         atualizarDashboard();
     } catch (error) {
-        showToast('Erro ao carregar dados', 'danger');
+        showToast('Erro ao carregar dados: ' + error.message, 'danger');
         console.error(error);
     }
 }
@@ -178,6 +238,13 @@ function atualizarDashboard() {
     renderizarListaQuartos();
     renderizarListaRepublicas();
     renderizarListaFuncionarios();
+    
+    // Se for admin, renderizar também as listas de administração
+    if (currentUser && currentUser.perfil === 'admin') {
+        renderizarListaEmpresas();
+        renderizarListaUsuarios();
+        popularSelectEmpresaUsuario();
+    }
 }
 
 // Renderizar os cards dos alojamentos agrupados por bloco
@@ -1379,6 +1446,45 @@ async function handleCheckoutRapido(e) {
     btn.innerHTML = originalText;
 }
 
+async function handleAlterarSenha(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-senha');
+    const originalText = btn.innerHTML;
+    
+    const novaSenha = document.getElementById('nova-senha').value;
+    const confirmaSenha = document.getElementById('confirma-senha').value;
+
+    if (novaSenha !== confirmaSenha) {
+        showToast('As senhas não coincidem', 'warning');
+        return;
+    }
+
+    if (novaSenha.length < 6) {
+        showToast('A senha deve ter no mínimo 6 caracteres', 'warning');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Processando...';
+
+    const { error } = await supabaseClient.auth.updateUser({ password: novaSenha });
+
+    if (error) {
+        showToast('Erro ao alterar senha: ' + error.message, 'danger');
+    } else {
+        showToast('Senha alterada com sucesso!', 'success');
+        document.getElementById('form-alterar-senha').reset();
+        
+        // Esconder modal
+        const modalEl = document.getElementById('modalAlterarSenha');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+}
+
 // Utilidade de Toast Bootstrap
 function showToast(message, type = 'primary') {
     const toastEl = document.getElementById('liveToast');
@@ -1488,3 +1594,193 @@ window.cancelarEdicaoRepublica = function() {
     document.getElementById('btn-save-republica').innerHTML = 'Cadastrar República';
     document.getElementById('btn-cancel-republica').classList.add('d-none');
 }
+
+// === ADMIN: EMPRESAS ===
+window.handleSearchEmpresas = function() {
+    searchEmpresas = document.getElementById('search-empresas').value.toLowerCase();
+    renderizarListaEmpresas();
+}
+
+async function handleNovoEmpresa(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-empresa');
+    btn.disabled = true;
+    btn.innerHTML = 'Salvando...';
+
+    const id = document.getElementById('empresa-id').value;
+    const nome = document.getElementById('empresa-nome').value;
+    const ativo = document.getElementById('empresa-ativo').checked;
+
+    const payload = { nome, ativo };
+
+    let error;
+    if (id) {
+        const { error: updateError } = await supabaseClient.from('empresa').update(payload).eq('id', id);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabaseClient.from('empresa').insert([payload]);
+        error = insertError;
+    }
+
+    if (error) {
+        showToast('Erro ao salvar empresa: ' + error.message, 'danger');
+    } else {
+        showToast(id ? 'Empresa atualizada!' : 'Empresa cadastrada!', 'success');
+        cancelarEdicaoEmpresa();
+        await loadData(); // Isso agora chamará atualizarDashboard e renderizarListaEmpresas
+    }
+    btn.disabled = false;
+}
+
+function renderizarListaEmpresas() {
+    const tbody = document.getElementById('lista-empresas-tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    const filtered = empresas.filter(e => e.nome.toLowerCase().includes(searchEmpresas));
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Nenhuma empresa encontrada.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(e => {
+        const dataCriacao = new Date(e.created_at).toLocaleDateString('pt-BR');
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-medium">${e.nome}</td>
+                <td><span class="badge ${e.ativo ? 'bg-success' : 'bg-secondary'} bg-opacity-10 ${e.ativo ? 'text-success' : 'text-secondary'}">${e.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>${dataCriacao}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-light text-primary" onclick="editarEmpresa('${e.id}')"><i class="bi bi-pencil"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+window.editarEmpresa = function(id) {
+    const emp = empresas.find(e => e.id === id);
+    if(!emp) return;
+    document.getElementById('empresa-id').value = emp.id;
+    document.getElementById('empresa-nome').value = emp.nome;
+    document.getElementById('empresa-ativo').checked = emp.ativo !== false;
+    document.getElementById('btn-save-empresa').innerHTML = 'Salvar Alterações';
+    document.getElementById('btn-cancel-empresa').classList.remove('d-none');
+}
+
+window.cancelarEdicaoEmpresa = function() {
+    document.getElementById('form-empresa').reset();
+    document.getElementById('empresa-id').value = '';
+    document.getElementById('empresa-ativo').checked = true;
+    document.getElementById('btn-save-empresa').innerHTML = 'Cadastrar Empresa';
+    document.getElementById('btn-cancel-empresa').classList.add('d-none');
+}
+
+// === ADMIN: USUÁRIOS ===
+window.handleSearchUsuarios = function() {
+    searchUsuarios = document.getElementById('search-usuarios').value.toLowerCase();
+    renderizarListaUsuarios();
+}
+
+function popularSelectEmpresaUsuario() {
+    const select = document.getElementById('usuario-empresa');
+    if(!select) return;
+    const valorAtual = select.value;
+    select.innerHTML = '<option value="">Selecione uma empresa...</option>';
+    empresas.forEach(e => {
+        select.innerHTML += `<option value="${e.id}">${e.nome}</option>`;
+    });
+    select.value = valorAtual;
+}
+
+async function handleNovoUsuario(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-usuario');
+    btn.disabled = true;
+    btn.innerHTML = 'Salvando...';
+
+    const id = document.getElementById('usuario-id').value;
+    const nome = document.getElementById('usuario-nome').value;
+    const email = document.getElementById('usuario-email').value;
+    const id_empresa = document.getElementById('usuario-empresa').value;
+    const perfil = document.getElementById('usuario-perfil').value;
+    const ativo = document.getElementById('usuario-ativo').checked;
+
+    const payload = { nome, email, id_empresa, perfil, ativo };
+
+    let error;
+    if (id) {
+        const { error: updateError } = await supabaseClient.from('usuario').update(payload).eq('id', id);
+        error = updateError;
+    } else {
+        // Nota: Isso apenas insere na tabela 'usuario'. 
+        // O usuário precisará ser criado no Auth do Supabase separadamente ou via Trigger.
+        const { error: insertError } = await supabaseClient.from('usuario').insert([payload]);
+        error = insertError;
+    }
+
+    if (error) {
+        showToast('Erro ao salvar usuário: ' + error.message, 'danger');
+    } else {
+        showToast(id ? 'Usuário atualizado!' : 'Usuário cadastrado!', 'success');
+        cancelarEdicaoUsuario();
+        await loadData(); // Isso agora chamará atualizarDashboard e renderizarListaUsuarios
+    }
+    btn.disabled = false;
+}
+
+function renderizarListaUsuarios() {
+    const tbody = document.getElementById('lista-usuarios-tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    const filtered = todosUsuarios.filter(u => 
+        u.nome.toLowerCase().includes(searchUsuarios) || 
+        u.email.toLowerCase().includes(searchUsuarios)
+    );
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Nenhum usuário encontrado.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(u => {
+        const emp = empresas.find(e => e.id === u.id_empresa);
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-medium">${u.nome}</td>
+                <td>${u.email}</td>
+                <td>${emp ? emp.nome : '<span class="text-danger">Sem empresa</span>'}</td>
+                <td><span class="badge ${u.perfil === 'admin' ? 'bg-danger' : 'bg-primary'} bg-opacity-10 ${u.perfil === 'admin' ? 'text-danger' : 'text-primary'}">${u.perfil}</span></td>
+                <td><span class="badge ${u.ativo ? 'bg-success' : 'bg-secondary'} bg-opacity-10 ${u.ativo ? 'text-success' : 'text-secondary'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-light text-primary" onclick="editarUsuario('${u.id}')"><i class="bi bi-pencil"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+window.editarUsuario = function(id) {
+    const user = todosUsuarios.find(u => u.id === id);
+    if(!user) return;
+    document.getElementById('usuario-id').value = user.id;
+    document.getElementById('usuario-nome').value = user.nome;
+    document.getElementById('usuario-email').value = user.email;
+    document.getElementById('usuario-empresa').value = user.id_empresa || '';
+    document.getElementById('usuario-perfil').value = user.perfil || 'user';
+    document.getElementById('usuario-ativo').checked = user.ativo !== false;
+    
+    document.getElementById('btn-save-usuario').innerHTML = 'Salvar Alterações';
+    document.getElementById('btn-cancel-usuario').classList.remove('d-none');
+}
+
+window.cancelarEdicaoUsuario = function() {
+    document.getElementById('form-usuario-admin').reset();
+    document.getElementById('usuario-id').value = '';
+    document.getElementById('usuario-ativo').checked = true;
+    document.getElementById('btn-save-usuario').innerHTML = 'Cadastrar Usuário';
+    document.getElementById('btn-cancel-usuario').classList.add('d-none');
+}
+

@@ -32,6 +32,9 @@
 *   **Exportação:** Módulo de exportação de histórico para **Excel (XLSX)** para integração com RH e financeiro.
 *   **Filtros de Período:** Pesquisa por data de entrada/saída e busca por nome do colaborador.
 
+### 🔐 Segurança do Usuário
+*   **Gestão de Senhas:** Funcionalidade integrada para que cada usuário altere sua própria senha de acesso diretamente pelo dashboard.
+
 ---
 
 ## 🛠️ Tecnologias Utilizadas
@@ -48,6 +51,44 @@ O projeto utiliza uma arquitetura moderna e leve, garantindo alta performance e 
     *   **Supabase:** Banco de dados PostgreSQL com capacidades em tempo real.
     *   **PostgREST:** APIs REST automáticas e seguras.
     *   **Supabase Auth:** Sistema de autenticação de usuários e controle de acesso.
+
+---
+
+## 📤 Como subir para o GitHub (Passo a Passo)
+
+Para versionar este projeto e compartilhá-lo no GitHub, siga estes passos no terminal da pasta raiz do projeto:
+
+1.  **Inicializar o Repositório:**
+    ```bash
+    git init
+    ```
+
+2.  **Preparar os Arquivos:**
+    ```bash
+    git add .
+    ```
+
+3.  **Criar o Primeiro Registro (Commit):**
+    ```bash
+    git commit -m "Initial commit: Sistema AlocaPro completo"
+    ```
+
+4.  **Configurar o Repositório Remoto:**
+    *   Crie um novo repositório no seu GitHub.
+    *   Copie o link (ex: `https://github.com/seu-usuario/alojamento.git`).
+    *   Execute:
+    ```bash
+    git remote add origin https://github.com/seu-usuario/alojamento.git
+    ```
+
+5.  **Enviar os Arquivos:**
+    ```bash
+    git branch -M main
+    git push -u origin main
+    ```
+
+> [!TIP]
+> Sempre que fizer uma alteração nova, repita os comandos: `git add .`, `git commit -m "descrição da mudança"` e `git push`.
 
 ---
 
