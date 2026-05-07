@@ -25,6 +25,7 @@
 ### 👥 Gestão de Cadastros
 *   **Funcionários:** Cadastro completo com CPF, Telefone e histórico de alocações.
 *   **Alojamentos e Repúblicas:** Controle de capacidade, blocos, endereços e valores de diárias.
+*   **Empresas (Admin):** Controle de licenciamento com definição de **Data de Expiração**.
 *   **Inativação Inteligente:** Possibilidade de desativar locais para manutenção com registro de motivo.
 
 ### 📑 Histórico e Relatórios
@@ -32,8 +33,9 @@
 *   **Exportação:** Módulo de exportação de histórico para **Excel (XLSX)** para integração com RH e financeiro.
 *   **Filtros de Período:** Pesquisa por data de entrada/saída e busca por nome do colaborador.
 
-### 🔐 Segurança do Usuário
+### 🔐 Segurança e Licenciamento
 *   **Gestão de Senhas:** Funcionalidade integrada para que cada usuário altere sua própria senha de acesso diretamente pelo dashboard.
+*   **Controle de Licença:** Alertas automáticos (7 dias de antecedência) e bloqueio imediato de acesso para empresas com licença expirada.
 
 ### 🎨 Experiência do Usuário (UX)
 *   **Navegação Inteligente:** Barra lateral com rolagem customizada, garantindo acesso a todos os menus em qualquer resolução de tela ou tamanho de janela.
@@ -116,7 +118,7 @@ Para rodar este projeto em seu ambiente de desenvolvimento:
 
 1.  **Requisitos Prévios:**
     *   Uma conta no [Supabase](https://supabase.com/).
-    *   Estrutura de tabelas: `usuario`, `empresa`, `quarto`, `republica`, `funcionario` e `alocacao`.
+    *   Estrutura de tabelas: `usuario`, `empresa` (com coluna `data_expiracao`), `quarto`, `republica`, `funcionario` e `alocacao`.
 
 2.  **Configuração de Credenciais:**
     *   Acesse `frontend/config.js`.
@@ -136,8 +138,8 @@ Para rodar este projeto em seu ambiente de desenvolvimento:
 
 O AlocaPro foi construído com arquitetura **Multitenant**:
 *   **Isolamento de Dados:** Cada empresa isola seus próprios dados através de filtragem por `id_empresa`.
-*   **Bloqueio de Acesso:** Sistema automático de verificação de status. Usuários ou empresas marcados como **Inativos** são impedidos de acessar o dashboard, com encerramento de sessão automático.
-*   **Políticas RLS:** Integração total com as políticas de segurança (Row Level Security) do Supabase para proteção a nível de banco de dados.
+*   **Bloqueio de Acesso:** Sistema automático de verificação de status. Usuários, empresas inativas ou com **licenças expiradas** são impedidos de acessar o dashboard, com encerramento de sessão automático.
+*   **Políticas RLS:** Integração total com as políticas de segurança (Row Level Security) do Supabase. Para novos usuários, certifique-se de que o `id` na tabela `usuario` corresponda ao UUID do Supabase Auth.
 
 ---
 *Desenvolvido com foco em eficiência operacional e controle logístico.*

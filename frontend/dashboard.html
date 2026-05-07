@@ -695,6 +695,11 @@
                                     <label class="form-label">Nome da Empresa</label>
                                     <input type="text" class="form-control" id="empresa-nome" required>
                                 </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Data de Expiração (Licença)</label>
+                                    <input type="date" class="form-control" id="empresa-expiracao">
+                                    <div class="form-text">Deixe em branco para licença vitalícia.</div>
+                                </div>
                                 <div class="mb-4">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="empresa-ativo" checked>
@@ -728,6 +733,7 @@
                                         <tr>
                                             <th class="border-0 rounded-start">Nome</th>
                                             <th class="border-0">Status</th>
+                                            <th class="border-0">Expiração</th>
                                             <th class="border-0">Data de Criação</th>
                                             <th class="border-0 rounded-end text-end">Ações</th>
                                         </tr>

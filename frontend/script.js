@@ -62,19 +62,44 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Verificação de Segurança: Empresa Ativa
+        // Verificação de Segurança: Empresa Ativa e Licença
         if (userData.id_empresa) {
             const { data: empresaData } = await supabaseClient
                 .from('empresa')
-                .select('ativo')
+                .select('ativo, data_expiracao')
                 .eq('id', userData.id_empresa)
                 .single();
 
-            if (empresaData && empresaData.ativo === false) {
-                alert('A sua empresa está inativada no sistema. Por favor, entre em contato com o suporte.');
-                await supabaseClient.auth.signOut();
-                window.location.href = 'login.html';
-                return;
+            if (empresaData) {
+                if (empresaData.ativo === false) {
+                    alert('A sua empresa está inativada no sistema. Por favor, entre em contato com o suporte.');
+                    await supabaseClient.auth.signOut();
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Verificar Expiração de Licença
+                if (empresaData.data_expiracao) {
+                    const expDate = new Date(empresaData.data_expiracao);
+                    const today = new Date();
+                    
+                    // Zerar horas para comparação justa de dias
+                    today.setHours(0,0,0,0);
+                    expDate.setHours(0,0,0,0);
+
+                    const diffTime = expDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 0) {
+                        alert('A licença da sua empresa expirou. Por favor, entre em contato com o suporte para renovação.');
+                        await supabaseClient.auth.signOut();
+                        window.location.href = 'login.html';
+                        return;
+                    } else if (diffDays <= 7) {
+                        const msg = diffDays === 0 ? 'Sua licença expira HOJE!' : `Atenção: Sua licença expira em ${diffDays} dia(s).`;
+                        setTimeout(() => showToast(msg, 'warning'), 1500);
+                    }
+                }
             }
         }
 
@@ -1638,9 +1663,10 @@ async function handleNovoEmpresa(e) {
 
     const id = document.getElementById('empresa-id').value;
     const nome = document.getElementById('empresa-nome').value;
+    const data_expiracao = document.getElementById('empresa-expiracao').value || null;
     const ativo = document.getElementById('empresa-ativo').checked;
 
-    const payload = { nome, ativo };
+    const payload = { nome, ativo, data_expiracao };
 
     let error;
     if (id) {
@@ -1675,10 +1701,13 @@ function renderizarListaEmpresas() {
 
     filtered.forEach(e => {
         const dataCriacao = new Date(e.created_at).toLocaleDateString('pt-BR');
+        const dataExp = e.data_expiracao ? new Date(e.data_expiracao).toLocaleDateString('pt-BR') : '<span class="text-muted small">Vitalícia</span>';
+        
         tbody.innerHTML += `
             <tr>
                 <td class="fw-medium">${e.nome}</td>
                 <td><span class="badge ${e.ativo ? 'bg-success' : 'bg-secondary'} bg-opacity-10 ${e.ativo ? 'text-success' : 'text-secondary'}">${e.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>${dataExp}</td>
                 <td>${dataCriacao}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-light text-primary" onclick="editarEmpresa('${e.id}')"><i class="bi bi-pencil"></i></button>
@@ -1693,6 +1722,7 @@ window.editarEmpresa = function(id) {
     if(!emp) return;
     document.getElementById('empresa-id').value = emp.id;
     document.getElementById('empresa-nome').value = emp.nome;
+    document.getElementById('empresa-expiracao').value = emp.data_expiracao || '';
     document.getElementById('empresa-ativo').checked = emp.ativo !== false;
     document.getElementById('btn-save-empresa').innerHTML = 'Salvar Alterações';
     document.getElementById('btn-cancel-empresa').classList.remove('d-none');
@@ -1701,6 +1731,7 @@ window.editarEmpresa = function(id) {
 window.cancelarEdicaoEmpresa = function() {
     document.getElementById('form-empresa').reset();
     document.getElementById('empresa-id').value = '';
+    document.getElementById('empresa-expiracao').value = '';
     document.getElementById('empresa-ativo').checked = true;
     document.getElementById('btn-save-empresa').innerHTML = 'Cadastrar Empresa';
     document.getElementById('btn-cancel-empresa').classList.add('d-none');
