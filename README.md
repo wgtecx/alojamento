@@ -135,9 +135,9 @@ Para rodar este projeto em seu ambiente de desenvolvimento:
 ## 🔒 Segurança e Multitenancy
 
 O AlocaPro foi construído com arquitetura **Multitenant**:
-*   Cada empresa isola seus próprios dados.
-*   A filtragem é feita a nível de aplicação baseada no `id_empresa` vinculado ao perfil do usuário logado.
-*   Integração total com as políticas de segurança (RLS) do Supabase.
+*   **Isolamento de Dados:** Cada empresa isola seus próprios dados através de filtragem por `id_empresa`.
+*   **Bloqueio de Acesso:** Sistema automático de verificação de status. Usuários ou empresas marcados como **Inativos** são impedidos de acessar o dashboard, com encerramento de sessão automático.
+*   **Políticas RLS:** Integração total com as políticas de segurança (Row Level Security) do Supabase para proteção a nível de banco de dados.
 
 ---
 *Desenvolvido com foco em eficiência operacional e controle logístico.*

@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } else {
         userNameEl.textContent = session.user.email;
+        showToast('Perfil não encontrado. Entre em contato com o administrador para vincular seu e-mail a uma empresa.', 'danger');
+        console.error('Perfil do usuário não encontrado no Supabase (tabela usuario) para o ID:', session.user.id);
     }
 
     // Eventos
@@ -156,7 +158,10 @@ window.switchSection = function(sectionId, element) {
 // Função centralizada para carregar todos os dados
 async function loadData() {
     try {
-        if (!currentCompanyId) return;
+        if (!currentCompanyId) {
+            console.warn('Aviso: currentCompanyId está nulo. Os dados de alojamento não serão carregados.');
+            return;
+        }
 
         // Buscar Quartos (Alojamentos)
         let qryQuartos = supabaseClient.from('quarto').select('*').eq('id_empresa', currentCompanyId).order('bloco').order('nome');
