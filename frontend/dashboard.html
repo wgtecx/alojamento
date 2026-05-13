@@ -109,12 +109,16 @@
                         <h1 class="page-title">Dashboard</h1>
                         <p class="page-subtitle">Visão geral em tempo real</p>
                     </div>
-                    <div style="width: 220px;">
-                        <select class="form-select form-select-sm shadow-sm" id="dashboard-filter"
-                            onchange="atualizarDashboard()">
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm shadow-sm" id="dashboard-filter" style="width: 160px;"
+                            onchange="popularSubFiltroDashboard()">
                             <option value="todos">Todos os Locais</option>
                             <option value="alojamentos">Alojamentos</option>
                             <option value="republicas">Repúblicas</option>
+                        </select>
+                        <select class="form-select form-select-sm shadow-sm d-none" id="dashboard-subfilter" style="width: 180px;"
+                            onchange="atualizarDashboard()">
+                            <!-- Preenchido via JS -->
                         </select>
                     </div>
                 </div>

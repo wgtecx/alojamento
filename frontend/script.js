@@ -258,6 +258,7 @@ async function loadData() {
         }
 
         popularFiltrosMapa();
+        popularSubFiltroDashboard(); // Inicializa o subfiltro
         atualizarDashboard();
     } catch (error) {
         showToast('Erro ao carregar dados: ' + error.message, 'danger');
@@ -280,6 +281,18 @@ function atualizarDashboard() {
     } else if (filter === 'republicas') {
         filteredQuartos = [];
         filteredAlocacoes = alocacoesAtivas.filter(a => a.id_republica != null);
+    }
+
+    // Aplica Sub-filtro de Local Específico
+    const subFilter = document.getElementById('dashboard-subfilter')?.value || 'todos';
+    if (subFilter !== 'todos') {
+        if (filter === 'alojamentos') {
+            filteredQuartos = filteredQuartos.filter(q => q.id === subFilter);
+            filteredAlocacoes = filteredAlocacoes.filter(a => a.id_quarto === subFilter);
+        } else if (filter === 'republicas') {
+            filteredReps = filteredReps.filter(r => r.id === subFilter);
+            filteredAlocacoes = filteredAlocacoes.filter(a => a.id_republica === subFilter);
+        }
     }
 
     let vagasOcupadas = filteredAlocacoes.length;
@@ -337,6 +350,39 @@ function atualizarDashboard() {
     }
 
     renderizarResumosTabelasDashboard(activeQuartos, activeReps, filteredAlocacoes);
+}
+
+// Popular o segundo select do dashboard (cascata)
+window.popularSubFiltroDashboard = function() {
+    const filter = document.getElementById('dashboard-filter').value;
+    const subFilter = document.getElementById('dashboard-subfilter');
+    
+    if (!subFilter) return;
+
+    if (filter === 'todos') {
+        subFilter.classList.add('d-none');
+        subFilter.innerHTML = '';
+        atualizarDashboard();
+        return;
+    }
+
+    subFilter.classList.remove('d-none');
+    let options = '<option value="todos">Todos os registros</option>';
+
+    if (filter === 'alojamentos') {
+        const quartosOrdenados = [...quartos].sort((a, b) => a.nome.localeCompare(b.nome));
+        quartosOrdenados.forEach(q => {
+            options += `<option value="${q.id}">${q.nome} (Bloco ${q.bloco})</option>`;
+        });
+    } else if (filter === 'republicas') {
+        const repsOrdenadas = [...republicas].sort((a, b) => a.nome.localeCompare(b.nome));
+        repsOrdenadas.forEach(r => {
+            options += `<option value="${r.id}">${r.nome} - ${r.quarto || 'Geral'}</option>`;
+        });
+    }
+
+    subFilter.innerHTML = options;
+    atualizarDashboard();
 }
 
 // Renderizar Resumos em Tabela para o Dashboard (Alta Performance)

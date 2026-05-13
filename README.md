@@ -13,8 +13,8 @@
 ### 📊 Dashboard e Inteligência
 *   **KPIs em Tempo Real:** Acompanhamento instantâneo de vagas totais, ocupadas, disponíveis e taxa de ocupação percentual.
 *   **Inteligência de Gênero:** Quadro resumo de ocupação detalhado por perfil (Masculino, Feminino e Não Especificado).
+*   **Filtros de Precisão (Cascata):** Capacidade de filtrar o dashboard por categoria (Alojamentos/Repúblicas) e mergulhar na análise individual de cada unidade/quarto para auditoria detalhada.
 *   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.
-*   **Filtros Avançados:** Alternância rápida entre visão de Alojamentos Próprios, Repúblicas ou visão consolidada.
 
 ### 🗺️ Mapa de Alojamento Visual (Interactive Grid)
 *   **Visão por Blocos:** Organização visual intuitiva dos quartos agrupados por prédios/blocos.
