@@ -64,7 +64,10 @@
                     <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
                 <a class="nav-item" onclick="switchSection('historico', this)">
-                    <i class="bi bi-clock-history"></i> Histórico
+                    <i class="bi bi-person-badge"></i> Relatório Individual
+                </a>
+                <a class="nav-item" onclick="switchSection('relatorio-ocupacao', this)">
+                    <i class="bi bi-file-earmark-bar-graph"></i> Relatório de Ocupação
                 </a>
 
                 <div id="admin-sidebar-section" class="d-none">
@@ -74,6 +77,9 @@
                     </a>
                     <a class="nav-item" onclick="switchSection('usuarios', this)">
                         <i class="bi bi-person-gear"></i> Usuários
+                    </a>
+                    <a class="nav-item" onclick="switchSection('modulos', this)">
+                        <i class="bi bi-diagram-3"></i> Módulos e Funções
                     </a>
                 </div>
             </nav>
@@ -329,10 +335,11 @@
                                             <option value="10">10 Pessoas</option>
                                         </select>
                                     </div>
-                                    <div class="col-6 mb-3">
-                                        <label class="form-label">Diária (R$)</label>
-                                        <input type="number" class="form-control" id="quarto-diaria" step="0.01"
-                                            value="0.00" required>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Módulo</label>
+                                        <select class="form-select" id="quarto-modulo" required>
+                                            <option value="">Selecione...</option>
+                                        </select>
                                     </div>
                                     <div class="col-12 mb-4">
                                         <label class="form-label">Gênero Permitido</label>
@@ -341,6 +348,16 @@
                                             <option value="M">Masculino</option>
                                             <option value="F">Feminino</option>
                                         </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária Ocupada (R$)</label>
+                                        <input type="number" class="form-control" id="quarto-diaria" step="0.01"
+                                            value="0.00" required>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária Ociosa (R$)</label>
+                                        <input type="number" class="form-control" id="quarto-diaria-ociosa" step="0.01"
+                                            value="0.00" required>
                                     </div>
                                     <div class="col-6 mb-3">
                                         <label class="form-label">Status</label>
@@ -382,8 +399,8 @@
                                         <tr>
                                             <th class="border-0 rounded-start">Nome</th>
                                             <th class="border-0">Bloco</th>
-                                            <th class="border-0">Gênero</th>
-                                            <th class="border-0">Diária</th>
+                                            <th class="border-0">Módulo</th>
+                                            <th class="border-0">Diárias (Ocup/Ocio)</th>
                                             <th class="border-0">Capacidade</th>
                                             <th class="border-0">Status</th>
                                             <th class="border-0 rounded-end text-end">Ações</th>
@@ -451,10 +468,11 @@
                                             <option value="10">10 Pessoas</option>
                                         </select>
                                     </div>
-                                    <div class="col-6 mb-3">
-                                        <label class="form-label">Diária (R$)</label>
-                                        <input type="number" class="form-control" id="republica-diaria" step="0.01"
-                                            value="0.00" required>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Módulo</label>
+                                        <select class="form-select" id="republica-modulo" required>
+                                            <option value="">Selecione...</option>
+                                        </select>
                                     </div>
                                     <div class="col-12 mb-4">
                                         <label class="form-label">Gênero Permitido</label>
@@ -463,6 +481,16 @@
                                             <option value="M">Masculino</option>
                                             <option value="F">Feminino</option>
                                         </select>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária Ocupada (R$)</label>
+                                        <input type="number" class="form-control" id="republica-diaria" step="0.01"
+                                            value="0.00" required>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">Diária Ociosa (R$)</label>
+                                        <input type="number" class="form-control" id="republica-diaria-ociosa" step="0.01"
+                                            value="0.00" required>
                                     </div>
                                     <div class="col-6 mb-3">
                                         <label class="form-label">Status</label>
@@ -505,9 +533,8 @@
                                         <tr>
                                             <th class="border-0 rounded-start">República</th>
                                             <th class="border-0">Quarto</th>
-                                            <th class="border-0">Endereço</th>
-                                            <th class="border-0">Gênero</th>
-                                            <th class="border-0">Diária</th>
+                                            <th class="border-0">Módulo</th>
+                                            <th class="border-0">Diárias (Ocup/Ocio)</th>
                                             <th class="border-0">Capacidade</th>
                                             <th class="border-0">Status</th>
                                             <th class="border-0 rounded-end text-end">Ações</th>
@@ -565,6 +592,18 @@
                                         <input type="text" class="form-control" id="func-telefone"
                                             placeholder="Ex: 5511999999999" required>
                                     </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Módulo</label>
+                                        <select class="form-select" id="func-modulo" required onchange="filtrarFuncoesPorModuloFuncionario()">
+                                            <option value="">Selecione...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-4">
+                                        <label class="form-label">Função</label>
+                                        <select class="form-select" id="func-funcao" required>
+                                            <option value="">Selecione um módulo primeiro...</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary w-100" id="btn-save-func">
@@ -593,7 +632,7 @@
                                         <tr>
                                             <th class="border-0 rounded-start">Nome</th>
                                             <th class="border-0">CPF</th>
-                                            <th class="border-0">Gênero</th>
+                                            <th class="border-0">Módulo/Função</th>
                                             <th class="border-0">Telefone</th>
                                             <th class="border-0">Status</th>
                                             <th class="border-0 rounded-end text-end">Ações</th>
@@ -661,6 +700,7 @@
                                     <th class="border-0">Local Hospedado</th>
                                     <th class="border-0">Entrada</th>
                                     <th class="border-0">Saída</th>
+                                    <th class="border-0 text-center">Duração (Dias)</th>
                                     <th class="border-0 rounded-end text-end">Valor Total</th>
                                 </tr>
                             </thead>
@@ -750,6 +790,51 @@
                 </div>
             </section>
 
+            <!-- SEC: RELATÓRIO DE OCUPAÇÃO -->
+            <section id="sec-relatorio-ocupacao" class="content-section">
+                <div class="page-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Relatório de Ocupação e Vagas Ociosas</h1>
+                        <p class="page-subtitle">Consumo de vagas e impacto financeiro por bloco/república</p>
+                    </div>
+                    <button class="btn btn-sm btn-success" onclick="exportarRelatorioOcupacaoExcel()">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar
+                    </button>
+                </div>
+
+                <div class="card p-4 border-0 mb-4 h-100">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabela-ocupacao">
+                            <thead class="table-light">
+                                <tr style="font-size: 0.75rem;">
+                                    <th class="border-0 rounded-start">Módulo</th>
+                                    <th class="border-0">Local</th>
+                                    <th class="border-0 text-center">Total Vagas</th>
+                                    <th class="border-0 text-center">Ocupadas</th>
+                                    <th class="border-0 text-center">Ociosas</th>
+                                    <th class="border-0 text-center">Taxa Ocup. (%)</th>
+                                    <th class="border-0 text-center">Diária Unit. (Ocup/Ocio)</th>
+                                    <th class="border-0 text-end">Total Ocupado</th>
+                                    <th class="border-0 text-end">Total Ocioso</th>
+                                    <th class="border-0 rounded-end text-end">Resumo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-ocupacao-tbody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">Carregando dados...</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-light fw-bold" id="lista-ocupacao-tfoot">
+                            </tfoot>
+                        </table>
+                    </div>
+                    <nav class="mt-4">
+                        <ul class="pagination pagination-sm justify-content-end mb-0" id="pagination-ocupacao">
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+
             <!-- SEC: USUÁRIOS -->
             <section id="sec-usuarios" class="content-section">
                 <div class="page-header">
@@ -830,6 +915,79 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEC: MÓDULOS E FUNÇÕES -->
+            <section id="sec-modulos" class="content-section">
+                <div class="page-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Módulos e Funções</h1>
+                        <p class="page-subtitle">Gerencie os módulos e funções do sistema</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="executarCargaInicialModulos()">
+                        <i class="bi bi-cloud-upload"></i> Carga Inicial (.txt)
+                    </button>
+                    <input type="file" id="input-carga-txt" accept=".txt" class="d-none" onchange="processarArquivoCarga(this)">
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card form-card border-0 w-100 p-4">
+                            <h5 class="mb-4 fw-bold fs-6">Novo Cadastro</h5>
+                            <form id="form-modulo-funcao">
+                                <input type="hidden" id="mf-id">
+                                <div class="mb-3">
+                                    <label class="form-label">Módulo</label>
+                                    <input type="text" class="form-control" id="mf-modulo" placeholder="Ex: MOI, MOD" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Função</label>
+                                    <input type="text" class="form-control" id="mf-funcao" placeholder="Ex: ANALISTA FINANCEIRO" required>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary w-100" id="btn-save-mf">
+                                        Cadastrar
+                                    </button>
+                                    <button type="button" class="btn btn-light w-100 d-none" id="btn-cancel-mf"
+                                        onclick="cancelarEdicaoMF()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card border-0 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold fs-6 mb-0">Cadastros Realizados</h5>
+                                <div style="width: 250px;">
+                                    <input type="text" class="form-control form-control-sm" id="search-modulos"
+                                        placeholder="Buscar módulo ou função..." onkeyup="handleSearchModulos()">
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 rounded-start">Módulo</th>
+                                            <th class="border-0">Função</th>
+                                            <th class="border-0 rounded-end text-end">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lista-modulos-tbody">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">Nenhum registro encontrado.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Paginação -->
+                            <nav class="mt-4">
+                                <ul class="pagination pagination-sm justify-content-end mb-0" id="pagination-modulos"></ul>
+                            </nav>
                         </div>
                     </div>
                 </div>

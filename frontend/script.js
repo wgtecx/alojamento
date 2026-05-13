@@ -26,6 +26,10 @@ let currentPageHistorico = 1;
 let searchHistorico = '';
 let searchEmpresas = '';
 let searchUsuarios = '';
+let searchModulos = '';
+let currentPageModulos = 1;
+let currentPageOcupacao = 1;
+let modulosFuncoes = [];
 const itemsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -145,6 +149,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (formEmp) formEmp.addEventListener('submit', handleNovoEmpresa);
     const formUser = document.getElementById('form-usuario-admin');
     if (formUser) formUser.addEventListener('submit', handleNovoUsuario);
+    const formMF = document.getElementById('form-modulo-funcao');
+    if (formMF) formMF.addEventListener('submit', handleNovoModuloFuncao);
     const formSenha = document.getElementById('form-alterar-senha');
     if (formSenha) formSenha.addEventListener('submit', handleAlterarSenha);
 
@@ -177,6 +183,21 @@ window.switchSection = function(sectionId, element) {
     if (sectionId === 'usuarios') {
         popularSelectEmpresaUsuario();
         renderizarListaUsuarios();
+    }
+    if (sectionId === 'funcionarios') {
+        popularSelectsModulosFuncoes();
+    }
+    if (sectionId === 'quartos') {
+        popularSelectsModulosLocais();
+    }
+    if (sectionId === 'republicas') {
+        popularSelectsModulosLocais();
+    }
+    if (sectionId === 'modulos') {
+        renderizarListaModulos();
+    }
+    if (sectionId === 'relatorio-ocupacao') {
+        renderizarRelatorioOcupacao();
     }
 }
 
@@ -225,6 +246,9 @@ async function loadData() {
 
             const { data: usuariosData } = await supabaseClient.from('usuario').select('*').order('nome');
             todosUsuarios = usuariosData || [];
+
+            const { data: mfData } = await supabaseClient.from('modulo_funcao').select('*').order('modulo').order('funcao');
+            modulosFuncoes = mfData || [];
         }
 
         popularFiltrosMapa();
@@ -298,6 +322,12 @@ function atualizarDashboard() {
         renderizarListaEmpresas();
         renderizarListaUsuarios();
         popularSelectEmpresaUsuario();
+        renderizarListaModulos();
+    }
+    popularSelectsModulosFuncoes();
+    popularSelectsModulosLocais();
+    if (document.getElementById('sec-relatorio-ocupacao').classList.contains('active')) {
+        renderizarRelatorioOcupacao();
     }
 }
 
@@ -706,8 +736,11 @@ function renderizarListaQuartos() {
             <tr>
                 <td class="fw-medium"><i class="bi bi-door-open me-2 text-muted"></i>${q.nome}</td>
                 <td>${q.bloco}</td>
-                <td>${getIconeSexoPermitido(q.sexo_permitido)}</td>
-                <td>R$ ${parseFloat(q.valor_diaria||0).toFixed(2)}</td>
+                <td><small class="badge bg-light text-dark border">${q.modulo || '-'}</small></td>
+                <td>
+                    <small class="text-success">Ocup: R$ ${parseFloat(q.valor_diaria||0).toFixed(2)}</small><br>
+                    <small class="text-muted">Ocio: R$ ${parseFloat(q.valor_diaria_ociosa||0).toFixed(2)}</small>
+                </td>
                 <td>${q.capacidade} vagas</td>
                 <td>${isAtivo ? '<span class="badge bg-success bg-opacity-10 text-success">Ativo</span>' : '<span class="badge bg-danger bg-opacity-10 text-danger" title="'+(q.motivo_inativo||'')+'">Inativo</span>'}</td>
                 <td class="text-end">
@@ -749,9 +782,11 @@ function renderizarListaRepublicas() {
             <tr>
                 <td class="fw-medium"><i class="bi bi-house-door me-2 text-muted"></i>${r.nome}</td>
                 <td>${r.quarto || '-'}</td>
-                <td>${r.endereco}</td>
-                <td>${getIconeSexoPermitido(r.sexo_permitido)}</td>
-                <td>R$ ${parseFloat(r.valor_diaria||0).toFixed(2)}</td>
+                <td><small class="badge bg-light text-dark border">${r.modulo || '-'}</small></td>
+                <td>
+                    <small class="text-success">Ocup: R$ ${parseFloat(r.valor_diaria||0).toFixed(2)}</small><br>
+                    <small class="text-muted">Ocio: R$ ${parseFloat(r.valor_diaria_ociosa||0).toFixed(2)}</small>
+                </td>
                 <td>${r.capacidade} vagas</td>
                 <td>${isAtivo ? '<span class="badge bg-success bg-opacity-10 text-success">Ativo</span>' : '<span class="badge bg-danger bg-opacity-10 text-danger" title="'+(r.motivo_inativo||'')+'">Inativo</span>'}</td>
                 <td class="text-end">
@@ -790,6 +825,8 @@ function renderizarListaFuncionarios() {
     paginated.forEach(f => {
         // Checar status de alocação
         const alocacao = alocacoesAtivas.find(a => a.id_funcionario === f.id);
+        const mf = modulosFuncoes.find(m => m.id === f.id_modulo_funcao);
+        
         let statusBadge = '<span class="badge bg-secondary fw-normal">Sem vaga</span>';
         if (alocacao) {
             if (alocacao.id_quarto) {
@@ -807,7 +844,7 @@ function renderizarListaFuncionarios() {
             <tr>
                 <td class="fw-medium"><i class="bi bi-person me-2 text-muted"></i>${f.nome}</td>
                 <td>${f.cpf || '-'}</td>
-                <td>${getIconeSexoFuncionario(f.sexo)}</td>
+                <td><small class="text-muted">${mf ? mf.modulo + ' - ' + mf.funcao : '-'}</small></td>
                 <td>${f.telefone || '-'}</td>
                 <td>${statusBadge}</td>
                 <td class="text-end">
@@ -866,7 +903,7 @@ function renderizarListaHistorico() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Nenhum registro no histórico.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum registro no relatório.</td></tr>';
         document.getElementById('pagination-historico').innerHTML = '';
         return;
     }
@@ -879,12 +916,16 @@ function renderizarListaHistorico() {
         const inDate = new Date(a.data_checkin).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
         const outDate = new Date(a.data_checkout).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
         
+        const durationMs = new Date(a.data_checkout) - new Date(a.data_checkin);
+        const durationDays = (durationMs / (1000 * 60 * 60 * 24)).toFixed(1);
+
         tbody.innerHTML += `
             <tr>
                 <td class="fw-medium"><i class="bi bi-person me-2 text-muted"></i>${a.nome_funcionario}</td>
                 <td>${a.nome_local}</td>
                 <td>${inDate}</td>
                 <td>${outDate}</td>
+                <td class="text-center fw-bold text-dark">${durationDays}</td>
                 <td class="text-end fw-bold text-primary">R$ ${parseFloat(a.valor_total||0).toFixed(2)}</td>
             </tr>
         `;
@@ -905,11 +946,15 @@ window.exportarHistoricoExcel = function() {
             const r = republicas.find(x => x.id === a.id_republica);
             if(r) nome_local = "República " + r.nome;
         }
+        const durationMs = new Date(a.data_checkout) - new Date(a.data_checkin);
+        const durationDays = (durationMs / (1000 * 60 * 60 * 24)).toFixed(1);
+
         return {
             'Funcionário': f ? f.nome : 'Desconhecido',
             'Local': nome_local,
             'Entrada': new Date(a.data_checkin).toLocaleString('pt-BR'),
             'Saída': new Date(a.data_checkout).toLocaleString('pt-BR'),
+            'Duração (Dias)': parseFloat(durationDays),
             'Valor Total (R$)': parseFloat(a.valor_total || 0).toFixed(2),
             _search: f ? f.nome.toLowerCase() : '',
             _dateIn: a.data_checkin.split('T')[0],
@@ -1017,8 +1062,9 @@ async function handleNovoFuncionario(e) {
     const cpf = document.getElementById('func-cpf').value;
     const telefone = document.getElementById('func-telefone').value;
     const sexo = document.getElementById('func-sexo').value;
+    const id_modulo_funcao = document.getElementById('func-funcao').value || null;
 
-    const payload = { nome, cpf, telefone, sexo };
+    const payload = { nome, cpf, telefone, sexo, id_modulo_funcao };
     if (currentCompanyId) payload.id_empresa = currentCompanyId;
 
     let error;
@@ -1052,11 +1098,13 @@ async function handleNovoQuarto(e) {
     const bloco = document.getElementById('quarto-bloco').value;
     const capacidade = document.getElementById('quarto-capacidade').value;
     const valor_diaria = document.getElementById('quarto-diaria').value;
+    const valor_diaria_ociosa = document.getElementById('quarto-diaria-ociosa').value;
+    const modulo = document.getElementById('quarto-modulo').value;
     const sexo_permitido = document.getElementById('quarto-sexo').value;
     const ativo = document.getElementById('quarto-status').value === 'true';
     const motivo_inativo = document.getElementById('quarto-motivo').value;
 
-    const payload = { nome, bloco, capacidade: parseInt(capacidade), valor_diaria: parseFloat(valor_diaria), sexo_permitido, ativo, motivo_inativo };
+    const payload = { nome, bloco, modulo, capacidade: parseInt(capacidade), valor_diaria: parseFloat(valor_diaria), valor_diaria_ociosa: parseFloat(valor_diaria_ociosa), sexo_permitido, ativo, motivo_inativo };
     if (currentCompanyId) payload.id_empresa = currentCompanyId;
 
     // Trava de segurança: Não inativar se houver gente alocada
@@ -1101,13 +1149,21 @@ async function handleNovoRepublica(e) {
     const bloco = document.getElementById('republica-bloco').value;
     const capacidade = document.getElementById('republica-capacidade').value;
     const valor_diaria = document.getElementById('republica-diaria').value;
+    const valor_diaria_ociosa = document.getElementById('republica-diaria-ociosa').value;
+    const modulo = document.getElementById('republica-modulo').value;
     const sexo_permitido = document.getElementById('republica-sexo').value;
     const endereco = document.getElementById('republica-endereco').value;
     const quarto = document.getElementById('republica-quarto').value;
     const ativo = document.getElementById('republica-status').value === 'true';
     const motivo_inativo = document.getElementById('republica-motivo').value;
 
-    const payload = { nome, bloco, capacidade: parseInt(capacidade), valor_diaria: parseFloat(valor_diaria), endereco, sexo_permitido, quarto, ativo, motivo_inativo };
+    const payload = { 
+        nome, bloco, modulo,
+        capacidade: parseInt(capacidade), 
+        valor_diaria: parseFloat(valor_diaria), 
+        valor_diaria_ociosa: parseFloat(valor_diaria_ociosa),
+        endereco, sexo_permitido, quarto, ativo, motivo_inativo 
+    };
     if (currentCompanyId) payload.id_empresa = currentCompanyId;
 
     // Trava de segurança: Não inativar se houver gente alocada
@@ -1191,9 +1247,19 @@ async function handleCheckin(e) {
         }
     }
 
+    // Validar Capacidade (Reforço)
+    const alocacoesNoLocal = alocacoesAtivas.filter(a => id_quarto ? a.id_quarto === id_quarto : a.id_republica === id_republica);
+    if (alocacoesNoLocal.length >= parseInt(localObj.capacidade)) {
+        showToast('Este local já atingiu a capacidade máxima!', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        return;
+    }
+
     const payload = { 
         id_funcionario, 
-        data_checkin: new Date().toISOString() 
+        data_checkin: new Date().toISOString(),
+        valor_diaria_contratado: localObj.valor_diaria || 0
     };
     if (id_quarto) payload.id_quarto = id_quarto;
     if (id_republica) payload.id_republica = id_republica;
@@ -1364,18 +1430,15 @@ window.abrirModalCheckoutRapido = function(id_alocacao, nome_funcionario, id_loc
     let nome_local = "";
     let valor_diaria = 0;
     
-    if (tipo_local === 'q') {
+    // Prioridade para a diária "congelada" no check-in
+    if (aloc.valor_diaria_contratado !== undefined && aloc.valor_diaria_contratado !== null) {
+        valor_diaria = parseFloat(aloc.valor_diaria_contratado);
+    } else if (tipo_local === 'q') {
         const q = quartos.find(x => x.id === id_local);
-        if(q) {
-            nome_local = "Alojamento " + q.nome;
-            valor_diaria = parseFloat(q.valor_diaria || 0);
-        }
+        if(q) valor_diaria = parseFloat(q.valor_diaria || 0);
     } else {
         const r = republicas.find(x => x.id === id_local);
-        if(r) {
-            nome_local = "República " + r.nome;
-            valor_diaria = parseFloat(r.valor_diaria || 0);
-        }
+        if(r) valor_diaria = parseFloat(r.valor_diaria || 0);
     }
     
     document.getElementById('co-quarto-nome').textContent = nome_local;
@@ -1413,9 +1476,19 @@ async function handleCheckinRapido(e) {
         return;
     }
 
+    let currentRate = 0;
+    if (tipo_local === 'q') {
+        const q = quartos.find(x => x.id === id_local);
+        if(q) currentRate = q.valor_diaria || 0;
+    } else {
+        const r = republicas.find(x => x.id === id_local);
+        if(r) currentRate = r.valor_diaria || 0;
+    }
+
     const payload = { 
         id_funcionario, 
-        data_checkin: new Date().toISOString() 
+        data_checkin: new Date().toISOString(),
+        valor_diaria_contratado: currentRate
     };
     if (tipo_local === 'q') payload.id_quarto = id_local;
     else payload.id_republica = id_local;
@@ -1565,8 +1638,10 @@ window.editarQuarto = function(id) {
     document.getElementById('quarto-id').value = quarto.id;
     document.getElementById('quarto-nome').value = quarto.nome;
     document.getElementById('quarto-bloco').value = quarto.bloco;
+    document.getElementById('quarto-modulo').value = quarto.modulo || '';
     document.getElementById('quarto-capacidade').value = quarto.capacidade;
     document.getElementById('quarto-diaria').value = quarto.valor_diaria || 0;
+    document.getElementById('quarto-diaria-ociosa').value = quarto.valor_diaria_ociosa || 0;
     document.getElementById('quarto-sexo').value = quarto.sexo_permitido || 'A';
     document.getElementById('quarto-status').value = String(quarto.ativo !== false);
     document.getElementById('quarto-motivo').value = quarto.motivo_inativo || '';
@@ -1586,9 +1661,10 @@ window.toggleMotivoQuarto = function() {
 }
 
 window.cancelarEdicaoQuarto = function() {
-    document.getElementById('form-quarto').reset();
     document.getElementById('quarto-id').value = '';
-    document.getElementById('btn-save-quarto').innerHTML = 'Cadastrar Quarto';
+    document.getElementById('quarto-modulo').value = '';
+    document.getElementById('quarto-diaria-ociosa').value = '0.00';
+    document.getElementById('btn-save-quarto').innerHTML = 'Cadastrar Alojamento';
     document.getElementById('btn-cancel-quarto').classList.add('d-none');
 }
 
@@ -1602,6 +1678,17 @@ window.editarFuncionario = function(id) {
     document.getElementById('func-telefone').value = func.telefone;
     document.getElementById('func-sexo').value = func.sexo || 'M';
     
+    // Setar módulo e função se existirem
+    const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+    if (mf) {
+        document.getElementById('func-modulo').value = mf.modulo;
+        filtrarFuncoesPorModuloFuncionario();
+        document.getElementById('func-funcao').value = mf.id;
+    } else {
+        document.getElementById('func-modulo').value = '';
+        document.getElementById('func-funcao').innerHTML = '<option value="">Selecione um módulo primeiro...</option>';
+    }
+    
     document.getElementById('btn-save-func').innerHTML = 'Salvar Alterações';
     document.getElementById('btn-cancel-func').classList.remove('d-none');
 }
@@ -1609,6 +1696,8 @@ window.editarFuncionario = function(id) {
 window.cancelarEdicaoFuncionario = function() {
     document.getElementById('form-funcionario').reset();
     document.getElementById('func-id').value = '';
+    document.getElementById('func-modulo').value = '';
+    document.getElementById('func-funcao').innerHTML = '<option value="">Selecione um módulo primeiro...</option>';
     document.getElementById('btn-save-func').innerHTML = 'Cadastrar Funcionário';
     document.getElementById('btn-cancel-func').classList.add('d-none');
 }
@@ -1621,8 +1710,10 @@ window.editarRepublica = function(id) {
     document.getElementById('republica-nome').value = rep.nome;
     document.getElementById('republica-quarto').value = rep.quarto || '';
     document.getElementById('republica-bloco').value = rep.bloco;
+    document.getElementById('republica-modulo').value = rep.modulo || '';
     document.getElementById('republica-capacidade').value = rep.capacidade;
     document.getElementById('republica-diaria').value = rep.valor_diaria || 0;
+    document.getElementById('republica-diaria-ociosa').value = rep.valor_diaria_ociosa || 0;
     document.getElementById('republica-endereco').value = rep.endereco;
     document.getElementById('republica-sexo').value = rep.sexo_permitido || 'A';
     document.getElementById('republica-status').value = String(rep.ativo !== false);
@@ -1643,8 +1734,9 @@ window.toggleMotivoRepublica = function() {
 }
 
 window.cancelarEdicaoRepublica = function() {
-    document.getElementById('form-republica').reset();
     document.getElementById('republica-id').value = '';
+    document.getElementById('republica-modulo').value = '';
+    document.getElementById('republica-diaria-ociosa').value = '0.00';
     document.getElementById('btn-save-republica').innerHTML = 'Cadastrar República';
     document.getElementById('btn-cancel-republica').classList.add('d-none');
 }
@@ -1743,6 +1835,17 @@ window.handleSearchUsuarios = function() {
     renderizarListaUsuarios();
 }
 
+window.handleSearchModulos = function() {
+    searchModulos = document.getElementById('search-modulos').value.toLowerCase();
+    currentPageModulos = 1;
+    renderizarListaModulos();
+}
+
+window.changePageModulos = function(page) {
+    currentPageModulos = page;
+    renderizarListaModulos();
+}
+
 function popularSelectEmpresaUsuario() {
     const select = document.getElementById('usuario-empresa');
     if(!select) return;
@@ -1807,6 +1910,7 @@ function renderizarListaUsuarios() {
 
     filtered.forEach(u => {
         const emp = empresas.find(e => e.id === u.id_empresa);
+        
         tbody.innerHTML += `
             <tr>
                 <td class="fw-medium">${u.nome}</td>
@@ -1842,5 +1946,362 @@ window.cancelarEdicaoUsuario = function() {
     document.getElementById('usuario-ativo').checked = true;
     document.getElementById('btn-save-usuario').innerHTML = 'Cadastrar Usuário';
     document.getElementById('btn-cancel-usuario').classList.add('d-none');
+}
+
+// === ADMIN: MÓDULOS E FUNÇÕES ===
+async function handleNovoModuloFuncao(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-mf');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Salvando...';
+
+    const id = document.getElementById('mf-id').value;
+    const modulo = document.getElementById('mf-modulo').value.toUpperCase();
+    const funcao = document.getElementById('mf-funcao').value.toUpperCase();
+
+    const payload = { modulo, funcao };
+
+    let error;
+    if (id) {
+        const { error: updateError } = await supabaseClient.from('modulo_funcao').update(payload).eq('id', id);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabaseClient.from('modulo_funcao').insert([payload]);
+        error = insertError;
+    }
+
+    if (error) {
+        showToast('Erro ao salvar: ' + error.message, 'danger');
+    } else {
+        showToast('Sucesso!', 'success');
+        cancelarEdicaoMF();
+        await loadData();
+    }
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+}
+
+function renderizarListaModulos() {
+    const tbody = document.getElementById('lista-modulos-tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    const filtered = modulosFuncoes.filter(mf => 
+        mf.modulo.toLowerCase().includes(searchModulos) || 
+        mf.funcao.toLowerCase().includes(searchModulos)
+    );
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Nenhum registro encontrado.</td></tr>';
+        document.getElementById('pagination-modulos').innerHTML = '';
+        return;
+    }
+
+    // Paginar
+    const start = (currentPageModulos - 1) * itemsPerPage;
+    const paginated = filtered.slice(start, start + itemsPerPage);
+
+    paginated.forEach(mf => {
+        tbody.innerHTML += `
+            <tr>
+                <td><span class="badge bg-light text-dark border">${mf.modulo}</span></td>
+                <td>${mf.funcao}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-light text-primary me-1" onclick="editarMF('${mf.id}')"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-light text-danger" onclick="excluirMF('${mf.id}')"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+
+    renderPagination(filtered.length, currentPageModulos, 'pagination-modulos', 'changePageModulos');
+}
+
+window.editarMF = function(id) {
+    const mf = modulosFuncoes.find(m => m.id === id);
+    if(!mf) return;
+    document.getElementById('mf-id').value = mf.id;
+    document.getElementById('mf-modulo').value = mf.modulo;
+    document.getElementById('mf-funcao').value = mf.funcao;
+    document.getElementById('btn-save-mf').innerHTML = 'Salvar Alterações';
+    document.getElementById('btn-cancel-mf').classList.remove('d-none');
+}
+
+window.cancelarEdicaoMF = function() {
+    document.getElementById('form-modulo-funcao').reset();
+    document.getElementById('mf-id').value = '';
+    document.getElementById('btn-save-mf').innerHTML = 'Cadastrar';
+    document.getElementById('btn-cancel-mf').classList.add('d-none');
+}
+
+async function excluirMF(id) {
+    // Blindagem: Verificar se algum funcionário usa este módulo/função
+    const emUso = funcionarios.some(f => f.id_modulo_funcao === id);
+    if (emUso) {
+        showToast('Não é possível excluir: existem funcionários vinculados a este Módulo/Função.', 'warning');
+        return;
+    }
+
+    if(!confirm('Tem certeza que deseja excluir este registro?')) return;
+    const { error } = await supabaseClient.from('modulo_funcao').delete().eq('id', id);
+    if (error) showToast('Erro ao excluir: ' + error.message, 'danger');
+    else {
+        showToast('Excluído com sucesso!', 'success');
+        await loadData();
+    }
+}
+
+function popularSelectsModulosFuncoes() {
+    const selectModulo = document.getElementById('func-modulo');
+    if(!selectModulo) return;
+
+    const modulosUnicos = [...new Set(modulosFuncoes.map(mf => mf.modulo))].sort();
+    
+    const valorAtual = selectModulo.value;
+    selectModulo.innerHTML = '<option value="">Selecione...</option>';
+    modulosUnicos.forEach(m => {
+        selectModulo.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+    selectModulo.value = valorAtual;
+}
+
+window.filtrarFuncoesPorModuloFuncionario = function() {
+    const moduloSel = document.getElementById('func-modulo').value;
+    const selectFuncao = document.getElementById('func-funcao');
+    
+    if(!moduloSel) {
+        selectFuncao.innerHTML = '<option value="">Selecione um módulo primeiro...</option>';
+        return;
+    }
+
+    const funcoesDoModulo = modulosFuncoes.filter(mf => mf.modulo === moduloSel).sort((a, b) => a.funcao.localeCompare(b.funcao));
+    
+    selectFuncao.innerHTML = '<option value="">Selecione a função...</option>';
+    funcoesDoModulo.forEach(mf => {
+        selectFuncao.innerHTML += `<option value="${mf.id}">${mf.funcao}</option>`;
+    });
+}
+
+window.executarCargaInicialModulos = function() {
+    document.getElementById('input-carga-txt').click();
+}
+
+window.processarArquivoCarga = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if(!confirm(`Deseja iniciar a carga a partir do arquivo "${file.name}"?`)) {
+        input.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            
+            const registros = [];
+            lines.forEach(line => {
+                if(!line.trim()) return;
+                // O arquivo usa tabulação ou espaços múltiplos
+                const parts = line.split(/\t/);
+                if(parts.length >= 2) {
+                    registros.push({
+                        modulo: parts[0].trim().toUpperCase(),
+                        funcao: parts[1].trim().toUpperCase()
+                    });
+                }
+            });
+
+            if(registros.length === 0) {
+                showToast('Nenhum registro válido encontrado no arquivo.', 'warning');
+                return;
+            }
+
+            showToast(`Processando ${registros.length} registros...`, 'info');
+
+            // Inserir em blocos de 50 para não sobrecarregar
+            const chunkSize = 50;
+            let sucessos = 0;
+            
+            for (let i = 0; i < registros.length; i += chunkSize) {
+                const chunk = registros.slice(i, i + chunkSize);
+                const { error } = await supabaseClient.from('modulo_funcao').insert(chunk);
+                if(!error) sucessos += chunk.length;
+                else console.error('Erro no bloco:', error);
+            }
+
+            showToast(`Carga finalizada! ${sucessos} registros importados.`, 'success');
+            input.value = ''; // Limpar input
+            await loadData();
+            
+        } catch (error) {
+            showToast('Erro ao processar arquivo: ' + error.message, 'danger');
+            console.error(error);
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+// === RELATÓRIO DE OCUPAÇÃO ===
+function popularSelectsModulosLocais() {
+    const sQuarto = document.getElementById('quarto-modulo');
+    const sRep = document.getElementById('republica-modulo');
+    
+    if(!sQuarto && !sRep) return;
+
+    const modulosUnicos = [...new Set(modulosFuncoes.map(mf => mf.modulo))].sort();
+    const options = '<option value="">Selecione...</option>' + modulosUnicos.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    if(sQuarto) {
+        const v = sQuarto.value;
+        sQuarto.innerHTML = options;
+        sQuarto.value = v;
+    }
+    if(sRep) {
+        const v = sRep.value;
+        sRep.innerHTML = options;
+        sRep.value = v;
+    }
+}
+
+function renderizarRelatorioOcupacao() {
+    const tbody = document.getElementById('lista-ocupacao-tbody');
+    const tfoot = document.getElementById('lista-ocupacao-tfoot');
+    if(!tbody) return;
+
+    tbody.innerHTML = '';
+    
+    // Unificar quartos e repúblicas ativos
+    const locais = [
+        ...quartos.filter(q => q.ativo !== false).map(q => ({...q, tipo: 'Alojamento', id_unificado: 'q_'+q.id})),
+        ...republicas.filter(r => r.ativo !== false).map(r => ({...r, tipo: 'República', id_unificado: 'r_'+r.id}))
+    ].sort((a, b) => (a.modulo || '').localeCompare(b.modulo || '') || (a.bloco || '').localeCompare(b.bloco || ''));
+
+    if(locais.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">Nenhum local ativo encontrado.</td></tr>';
+        document.getElementById('pagination-ocupacao').innerHTML = '';
+        return;
+    }
+
+    let totVagas = 0, totOcup = 0, totOcio = 0, totValOcup = 0, totValOcio = 0;
+
+    // Calcular Totais Gerais (Sempre sobre o set completo)
+    locais.forEach(loc => {
+        const isQuarto = loc.tipo === 'Alojamento';
+        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        const ocupadas = alocs.length;
+        const ociosas = Math.max(0, loc.capacidade - ocupadas);
+        totVagas += loc.capacidade;
+        totOcup += ocupadas;
+        totOcio += ociosas;
+        totValOcup += ocupadas * (loc.valor_diaria || 0);
+        totValOcio += ociosas * (loc.valor_diaria_ociosa || 0);
+    });
+
+    // Paginar
+    const start = (currentPageOcupacao - 1) * itemsPerPage;
+    const paginated = locais.slice(start, start + itemsPerPage);
+
+    paginated.forEach(loc => {
+        const isQuarto = loc.tipo === 'Alojamento';
+        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        
+        const ocupadas = alocs.length;
+        const ociosas = Math.max(0, loc.capacidade - ocupadas);
+        const taxa = loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0;
+        
+        const vOcup = ocupadas * (loc.valor_diaria || 0);
+        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+        const vTotal = vOcup + vOcio;
+
+        tbody.innerHTML += `
+            <tr>
+                <td><span class="badge bg-light text-dark border">${loc.modulo || 'N/A'}</span></td>
+                <td>
+                    <div class="fw-medium">${loc.nome}</div>
+                    <small class="text-muted">${loc.tipo} - ${loc.bloco || '-'}</small>
+                </td>
+                <td class="text-center">${loc.capacidade}</td>
+                <td class="text-center text-primary fw-bold">${ocupadas}</td>
+                <td class="text-center text-warning">${ociosas}</td>
+                <td class="text-center">
+                    <div class="progress" style="height: 6px; width: 60px; margin: 0 auto;">
+                        <div class="progress-bar ${taxa > 80 ? 'bg-danger' : 'bg-success'}" role="progressbar" style="width: ${taxa}%"></div>
+                    </div>
+                    <small>${taxa}%</small>
+                </td>
+                <td class="text-center small">
+                    <span class="text-success">${parseFloat(loc.valor_diaria||0).toFixed(2)}</span> / 
+                    <span class="text-muted">${parseFloat(loc.valor_diaria_ociosa||0).toFixed(2)}</span>
+                </td>
+                <td class="text-end text-success">R$ ${vOcup.toFixed(2)}</td>
+                <td class="text-end text-muted">R$ ${vOcio.toFixed(2)}</td>
+                <td class="text-end fw-bold">R$ ${vTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    tfoot.innerHTML = `
+        <tr>
+            <td colspan="2" class="text-end">TOTAIS GERAIS:</td>
+            <td class="text-center">${totVagas}</td>
+            <td class="text-center">${totOcup}</td>
+            <td class="text-center">${totOcio}</td>
+            <td class="text-center">${(totOcup/totVagas*100).toFixed(1)}%</td>
+            <td></td>
+            <td class="text-end text-success">R$ ${totValOcup.toFixed(2)}</td>
+            <td class="text-end text-muted">R$ ${totValOcio.toFixed(2)}</td>
+            <td class="text-end text-primary fs-5">R$ ${(totValOcup + totValOcio).toFixed(2)}</td>
+        </tr>
+    `;
+
+    renderPagination(locais.length, currentPageOcupacao, 'pagination-ocupacao', 'changePageOcupacao');
+}
+
+window.changePageOcupacao = function(page) {
+    currentPageOcupacao = page;
+    renderizarRelatorioOcupacao();
+}
+
+window.exportarRelatorioOcupacaoExcel = function() {
+    const locais = [
+        ...quartos.filter(q => q.ativo !== false).map(q => ({...q, tipo: 'Alojamento'})),
+        ...republicas.filter(r => r.ativo !== false).map(r => ({...r, tipo: 'República'}))
+    ];
+
+    const data = locais.map(loc => {
+        const isQuarto = loc.tipo === 'Alojamento';
+        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        const ocupadas = alocs.length;
+        const ociosas = Math.max(0, loc.capacidade - ocupadas);
+        const vOcup = ocupadas * (loc.valor_diaria || 0);
+        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+
+        return {
+            'Módulo': loc.modulo || 'N/A',
+            'Tipo': loc.tipo,
+            'Local': loc.nome,
+            'Bloco/Ref': loc.bloco || '-',
+            'Total Vagas': loc.capacidade,
+            'Ocupadas': ocupadas,
+            'Ociosas': ociosas,
+            'Taxa Ocup. (%)': loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0,
+            'Diária Ocupada': loc.valor_diaria,
+            'Diária Ociosa': loc.valor_diaria_ociosa,
+            'Total Ocupado (R$)': vOcup,
+            'Total Ocioso (R$)': vOcio,
+            'Resumo Total (R$)': vOcup + vOcio
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ocupação");
+    XLSX.writeFile(wb, `Relatorio_Ocupacao_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('Relatório exportado!', 'success');
 }
 

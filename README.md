@@ -23,15 +23,22 @@
 *   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou mistos.
 
 ### 👥 Gestão de Cadastros
-*   **Funcionários:** Cadastro completo com CPF, Telefone e histórico de alocações.
-*   **Alojamentos e Repúblicas:** Controle de capacidade, blocos, endereços e valores de diárias.
+*   **Funcionários:** Cadastro completo com CPF, Telefone, filtragem em cascata por Módulo/Função e histórico de alocações.
+*   **Módulos e Funções:** Gestão administrativa de categorias profissionais com suporte a **Carga em Lote (.txt)**.
+*   **Alojamentos e Repúblicas:** Controle de capacidade, blocos, módulos e valores diferenciados (Diária Ocupada vs Ociosa).
 *   **Empresas (Admin):** Controle de licenciamento com definição de **Data de Expiração**.
 *   **Inativação Inteligente:** Possibilidade de desativar locais para manutenção com registro de motivo.
 
-### 📑 Histórico e Relatórios
-*   **Log de Estadias:** Registro detalhado de quem ficou onde, por quanto tempo e qual o custo gerado.
-*   **Exportação:** Módulo de exportação de histórico para **Excel (XLSX)** para integração com RH e financeiro.
+### 📑 Relatórios e Auditoria
+*   **Relatório de Ocupação:** Visão consolidada de vagas ocupadas e ociosas com impacto financeiro.
+*   **Relatório Individual:** Histórico completo de estadias por funcionário com cálculo automático de dias alocados.
+*   **Exportação Inteligente:** Módulos de exportação para **Excel (XLSX)** em todos os relatórios gerenciais.
 *   **Filtros de Período:** Pesquisa por data de entrada/saída e busca por nome do colaborador.
+
+### 🛡️ Blindagem Financeira e Processos
+*   **Diária Imutável:** O valor da diária é congelado no check-in, protegendo o histórico contra alterações de preços retroativas.
+*   **Prevenção de Erros:** Travas de segurança para evitar overbooking, duplicidade de alocação e conflitos de gênero.
+*   **Integridade Referencial:** Proteção contra exclusão de dados (módulos/funções) que possuam vínculos ativos.
 
 ### 🔐 Segurança e Licenciamento
 *   **Gestão de Senhas:** Funcionalidade integrada para que cada usuário altere sua própria senha de acesso diretamente pelo dashboard.
@@ -118,7 +125,8 @@ Para rodar este projeto em seu ambiente de desenvolvimento:
 
 1.  **Requisitos Prévios:**
     *   Uma conta no [Supabase](https://supabase.com/).
-    *   Estrutura de tabelas: `usuario`, `empresa` (com coluna `data_expiracao`), `quarto`, `republica`, `funcionario` e `alocacao`.
+    *   Estrutura de tabelas: `usuario`, `empresa`, `quarto`, `republica`, `funcionario`, `alocacao` e `modulo_funcao`.
+    *   Colunas críticas em `alocacao`: `valor_diaria_contratado` para blindagem de faturamento.
 
 2.  **Configuração de Credenciais:**
     *   Acesse `frontend/config.js`.
