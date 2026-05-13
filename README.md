@@ -12,6 +12,7 @@
 
 ### 📊 Dashboard e Inteligência
 *   **KPIs em Tempo Real:** Acompanhamento instantâneo de vagas totais, ocupadas, disponíveis e taxa de ocupação percentual.
+*   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.
 *   **Filtros Avançados:** Alternância rápida entre visão de Alojamentos Próprios, Repúblicas ou visão consolidada.
 
 ### 🗺️ Mapa de Alojamento Visual (Interactive Grid)
@@ -20,7 +21,7 @@
 *   **Ações Diretas (Quick Actions):** 
     *   **Check-in Rápido:** Clique em uma vaga livre para alocar um funcionário instantaneamente.
     *   **Check-out Rápido:** Clique no nome de um funcionário para liberar a vaga e calcular o custo da estadia.
-*   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou mistos.
+*   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou de gênero não especificado.
 
 ### 👥 Gestão de Cadastros
 *   **Funcionários:** Cadastro completo com CPF, Telefone, filtragem em cascata por Módulo/Função e histórico de alocações.

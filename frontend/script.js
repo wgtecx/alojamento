@@ -329,6 +329,61 @@ function atualizarDashboard() {
     if (document.getElementById('sec-relatorio-ocupacao').classList.contains('active')) {
         renderizarRelatorioOcupacao();
     }
+
+    renderizarResumosTabelasDashboard(activeQuartos, activeReps, filteredAlocacoes);
+}
+
+// Renderizar Resumos em Tabela para o Dashboard (Alta Performance)
+function renderizarResumosTabelasDashboard(quartosAtivos, repsAtivas, alocs) {
+    const tbodyModulo = document.getElementById('dash-modulo-tbody');
+    const tbodyLocal = document.getElementById('dash-local-tbody');
+    
+    if(!tbodyModulo || !tbodyLocal) return;
+
+    // 1. Resumo por Módulo
+    const contagemModulos = {};
+    alocs.forEach(a => {
+        const func = funcionarios.find(f => f.id === a.id_funcionario);
+        if (func && func.id_modulo_funcao) {
+            const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+            const nomeModulo = mf ? mf.modulo : 'Outros';
+            contagemModulos[nomeModulo] = (contagemModulos[nomeModulo] || 0) + 1;
+        } else {
+            contagemModulos['N/A'] = (contagemModulos['N/A'] || 0) + 1;
+        }
+    });
+
+    tbodyModulo.innerHTML = Object.entries(contagemModulos)
+        .sort((a, b) => b[1] - a[1])
+        .map(([modulo, total]) => `
+            <tr>
+                <td>${modulo}</td>
+                <td class="text-end fw-bold text-primary">${total}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="2" class="text-center text-muted">Sem alocações</td></tr>';
+
+    // 2. Ranking de Ocupação (Mais Cheios)
+    const ranking = [...quartosAtivos, ...repsAtivas].map(loc => {
+        const isQ = quartosAtivos.includes(loc);
+        const ocup = alocs.filter(a => isQ ? a.id_quarto === loc.id : a.id_republica === loc.id).length;
+        const perc = loc.capacidade > 0 ? (ocup / loc.capacidade * 100) : 0;
+        return { nome: loc.nome, ocup, capacidade: loc.capacidade, perc };
+    })
+    .sort((a, b) => b.perc - a.perc)
+    .slice(0, 5);
+
+    tbodyLocal.innerHTML = ranking.map(l => {
+        let cor = 'text-success';
+        if(l.perc > 80) cor = 'text-danger';
+        else if(l.perc > 50) cor = 'text-warning';
+
+        return `
+            <tr>
+                <td>${l.nome} <small class="text-muted">(${l.ocup}/${l.capacidade})</small></td>
+                <td class="text-end fw-bold ${cor}">${l.perc.toFixed(0)}%</td>
+            </tr>
+        `;
+    }).join('') || '<tr><td colspan="2" class="text-center text-muted">Sem dados</td></tr>';
 }
 
 // Renderizar os cards dos alojamentos agrupados por bloco
@@ -698,7 +753,7 @@ window.changePageHistorico = function(page) {
 function getIconeSexoPermitido(val) {
     if(val === 'M') return '<span class="badge bg-primary bg-opacity-10 text-primary"><i class="bi bi-gender-male"></i> Masculino</span>';
     if(val === 'F') return '<span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-gender-female"></i> Feminino</span>';
-    return '<span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-gender-ambiguous"></i> Misto</span>';
+    return '<span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-gender-ambiguous"></i> Não especificado</span>';
 }
 
 function getIconeSexoFuncionario(val) {

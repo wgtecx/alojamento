@@ -150,25 +150,67 @@
                     </div>
                 </div>
 
-                <div class="card p-4 border-0">
-                    <h5 class="mb-4 fw-bold">Resumo</h5>
-                    <div class="row mb-4">
-                        <div class="col-6">
-                            <div class="text-muted small mb-1" id="resumo-label">Alojamentos e Repúblicas</div>
-                            <div class="fs-4 fw-bold" id="resumo-quartos">0</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-muted small mb-1">Total de funcionários</div>
-                            <div class="fs-4 fw-bold" id="resumo-funcionarios">0</div>
+                <div class="card p-4 border-0 mb-4">
+                    <h5 class="fw-bold fs-6 mb-4">Resumo Consolidado</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between mb-4">
+                                <div>
+                                    <p class="text-muted small mb-1" id="resumo-label">Alojamentos e Repúblicas</p>
+                                    <h3 class="fw-bold mb-0" id="resumo-quartos">0</h3>
+                                </div>
+                                <div class="text-end">
+                                    <p class="text-muted small mb-1">Total de funcionários</p>
+                                    <h3 class="fw-bold mb-0" id="resumo-funcionarios">0</h3>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small">Ocupação geral</span>
+                                <span class="fw-bold small" id="resumo-ocupacao-texto">0/0</span>
+                            </div>
+                            <div class="progress" style="height: 10px; border-radius: 5px;">
+                                <div id="resumo-progress" class="progress-bar bg-primary" role="progressbar"
+                                    style="width: 0%"></div>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span>Ocupação geral</span>
-                            <span class="fw-bold text-dark" id="resumo-ocupacao-texto">0/0</span>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card p-4 border-0 h-100">
+                            <h5 class="fw-bold fs-6 mb-3">Ocupação por Módulo</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <thead class="text-muted small">
+                                        <tr>
+                                            <th>Módulo</th>
+                                            <th class="text-end">Alocados</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-modulo-tbody" class="small">
+                                        <!-- Preenchido via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="progress-container">
-                            <div class="progress-bar-fill" id="resumo-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card p-4 border-0 h-100">
+                            <h5 class="fw-bold fs-6 mb-3">Alertas de Ocupação (Mais Cheios)</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <thead class="text-muted small">
+                                        <tr>
+                                            <th>Local</th>
+                                            <th class="text-end">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-local-tbody" class="small">
+                                        <!-- Preenchido via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -344,9 +386,9 @@
                                     <div class="col-12 mb-4">
                                         <label class="form-label">Gênero Permitido</label>
                                         <select class="form-select" id="quarto-sexo" required>
-                                            <option value="A">Ambos (Misto)</option>
                                             <option value="M">Masculino</option>
                                             <option value="F">Feminino</option>
+                                            <option value="A">Não especificado</option>
                                         </select>
                                     </div>
                                     <div class="col-6 mb-3">
@@ -477,9 +519,9 @@
                                     <div class="col-12 mb-4">
                                         <label class="form-label">Gênero Permitido</label>
                                         <select class="form-select" id="republica-sexo" required>
-                                            <option value="A">Ambos (Misto)</option>
                                             <option value="M">Masculino</option>
                                             <option value="F">Feminino</option>
+                                            <option value="A">Não especificado</option>
                                         </select>
                                     </div>
                                     <div class="col-6 mb-3">
