@@ -199,6 +199,12 @@ window.switchSection = function(sectionId, element) {
     if (sectionId === 'relatorio-ocupacao') {
         renderizarRelatorioOcupacao();
     }
+    if (sectionId === 'mapa') {
+        renderizarMapaAlojamentos();
+    }
+    if (sectionId === 'mapa-republicas') {
+        renderizarMapaRepublicas();
+    }
 }
 
 // Função centralizada para carregar todos os dados
@@ -337,6 +343,7 @@ function atualizarDashboard() {
 function renderizarResumosTabelasDashboard(quartosAtivos, repsAtivas, alocs) {
     const tbodyModulo = document.getElementById('dash-modulo-tbody');
     const tbodyLocal = document.getElementById('dash-local-tbody');
+    const tbodyGenero = document.getElementById('dash-genero-tbody');
     
     if(!tbodyModulo || !tbodyLocal) return;
 
@@ -384,6 +391,33 @@ function renderizarResumosTabelasDashboard(quartosAtivos, repsAtivas, alocs) {
             </tr>
         `;
     }).join('') || '<tr><td colspan="2" class="text-center text-muted">Sem dados</td></tr>';
+
+    // 3. Resumo por Gênero (Exclusivo do Dashboard principal)
+    if (tbodyGenero) {
+        let genStats = { 
+            M: { n: 'Masculino', o: 0, t: 0, c: 'text-primary' }, 
+            F: { n: 'Feminino', o: 0, t: 0, c: 'text-danger' }, 
+            A: { n: 'Não especificado', o: 0, t: 0, c: 'text-secondary' } 
+        };
+
+        [...quartosAtivos, ...repsAtivas].forEach(loc => {
+            const g = loc.sexo_permitido || 'A';
+            const ocup = alocs.filter(a => loc.bloco ? a.id_quarto === loc.id : a.id_republica === loc.id).length;
+            if (genStats[g]) {
+                genStats[g].o += ocup;
+                genStats[g].t += loc.capacidade;
+            }
+        });
+
+        tbodyGenero.innerHTML = Object.values(genStats).map(gs => `
+            <tr>
+                <td><span class="${gs.c}">${gs.n}</span></td>
+                <td class="text-center">${gs.t}</td>
+                <td class="text-center">${gs.o}</td>
+                <td class="text-end fw-bold text-success">${Math.max(0, gs.t - gs.o)}</td>
+            </tr>
+        `).join('');
+    }
 }
 
 // Renderizar os cards dos alojamentos agrupados por bloco
@@ -398,13 +432,20 @@ function renderizarMapaAlojamentos() {
     // Identificar blocos únicos
     let blocosUnicos = [...new Set(quartos.map(q => q.bloco))].sort();
 
-    // Aplicar Filtro
+    // Aplicar Filtro de Bloco
     const filtroBloco = document.getElementById('filter-mapa-bloco')?.value || 'todos';
     if (filtroBloco !== 'todos') {
         blocosUnicos = blocosUnicos.filter(b => b === filtroBloco);
     }
 
+    // Termo de Busca de Funcionário
+    const searchMap = document.getElementById('search-mapa-alojamento')?.value.toLowerCase() || '';
+
+    // Contadores para o resumo de gênero
+    let stats = { M: { o: 0, t: 0 }, F: { o: 0, t: 0 }, A: { o: 0, t: 0 } };
+
     blocosUnicos.forEach(bloco => {
+        let hasMatches = false;
         // Container do Bloco
         const blockContainer = document.createElement('div');
         blockContainer.className = 'card border-0 mb-4 p-4 shadow-sm';
@@ -430,6 +471,22 @@ function renderizarMapaAlojamentos() {
             const alocacoesQuarto = alocacoesAtivas.filter(a => a.id_quarto === quarto.id);
             const ocupacaoAtual = alocacoesQuarto.length;
             const capacidade = parseInt(quarto.capacidade);
+
+            // Somar estatísticas de gênero
+            const gen = quarto.sexo_permitido || 'A';
+            if (stats[gen]) {
+                stats[gen].o += ocupacaoAtual;
+                stats[gen].t += capacidade;
+            }
+
+            // Se houver busca ativa, verificar se este quarto possui o funcionário
+            if (searchMap) {
+                const temFuncionario = alocacoesQuarto.some(aloc => {
+                    const func = funcionarios.find(f => f.id === aloc.id_funcionario);
+                    return func && (func.nome.toLowerCase().includes(searchMap) || (func.cpf && func.cpf.includes(searchMap)));
+                });
+                if (!temFuncionario) return; // Oculta o card se não encontrar o funcionário buscado
+            }
 
             // Definir status visual
             let statusBadge = 'badge-available';
@@ -512,11 +569,39 @@ function renderizarMapaAlojamentos() {
             `;
 
             gridDiv.insertAdjacentHTML('beforeend', cardHTML);
+            hasMatches = true;
         });
 
-        blockContainer.appendChild(gridDiv);
-        roomsContainer.appendChild(blockContainer);
+        if (hasMatches) {
+            blockContainer.appendChild(gridDiv);
+            roomsContainer.appendChild(blockContainer);
+        }
     });
+
+    if (roomsContainer.innerHTML === '' && searchMap) {
+        roomsContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-person-x fs-1"></i><br>Nenhum funcionário encontrado com este termo.</div>';
+    }
+
+    // Renderizar resumo de gênero
+    renderizarHtmlResumoGenero('resumo-genero-alojamento', stats);
+}
+
+// Renderizar HTML dos badges de resumo por gênero
+function renderizarHtmlResumoGenero(containerId, stats) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    el.innerHTML = `
+        <div class="card p-1 px-2 border-0 bg-primary bg-opacity-10" title="Vagas Masculinas">
+            <small class="fw-bold text-primary" style="font-size: 0.7rem;">MASC: ${stats.M.o}/${stats.M.t}</small>
+        </div>
+        <div class="card p-1 px-2 border-0 bg-danger bg-opacity-10" title="Vagas Femininas">
+            <small class="fw-bold text-danger" style="font-size: 0.7rem;">FEM: ${stats.F.o}/${stats.F.t}</small>
+        </div>
+        <div class="card p-1 px-2 border-0 bg-secondary bg-opacity-10" title="Gênero Não Especificado">
+            <small class="fw-bold text-secondary" style="font-size: 0.7rem;">N.E: ${stats.A.o}/${stats.A.t}</small>
+        </div>
+    `;
 }
 
 // Renderizar os cards das repúblicas
@@ -534,13 +619,20 @@ function renderizarMapaRepublicas() {
     // Agrupar por nome da república
     let nomesReps = [...new Set(republicas.map(r => r.nome))].sort();
 
-    // Aplicar Filtro
+    // Aplicar Filtro de República
     const filtroRep = document.getElementById('filter-mapa-republica')?.value || 'todos';
     if (filtroRep !== 'todos') {
         nomesReps = nomesReps.filter(n => n === filtroRep);
     }
 
+    // Termo de Busca de Funcionário
+    const searchMapRep = document.getElementById('search-mapa-republica')?.value.toLowerCase() || '';
+
+    // Contadores para o resumo de gênero
+    let statsRep = { M: { o: 0, t: 0 }, F: { o: 0, t: 0 }, A: { o: 0, t: 0 } };
+
     nomesReps.forEach(nomeRep => {
+        let hasMatchesRep = false;
         const quartosDaRep = republicas.filter(r => r.nome === nomeRep);
         const endereco = quartosDaRep[0].endereco;
 
@@ -569,6 +661,22 @@ function renderizarMapaRepublicas() {
             const alocacoesRep = alocacoesAtivas.filter(a => a.id_republica === republica.id);
             const ocupacaoAtual = alocacoesRep.length;
             const capacidade = parseInt(republica.capacidade);
+
+            // Somar estatísticas de gênero
+            const gen = republica.sexo_permitido || 'A';
+            if (statsRep[gen]) {
+                statsRep[gen].o += ocupacaoAtual;
+                statsRep[gen].t += capacidade;
+            }
+
+            // Se houver busca ativa, verificar se esta república possui o funcionário
+            if (searchMapRep) {
+                const temFuncionario = alocacoesRep.some(aloc => {
+                    const func = funcionarios.find(f => f.id === aloc.id_funcionario);
+                    return func && (func.nome.toLowerCase().includes(searchMapRep) || (func.cpf && func.cpf.includes(searchMapRep)));
+                });
+                if (!temFuncionario) return; // Oculta o card se não encontrar o funcionário buscado
+            }
 
             let statusBadge = 'badge-available';
             let statusText = 'Disponível';
@@ -643,11 +751,21 @@ function renderizarMapaRepublicas() {
                 </div>
             `;
             gridDiv.insertAdjacentHTML('beforeend', cardHTML);
+            hasMatchesRep = true;
         });
 
-        repContainer.appendChild(gridDiv);
-        repsContainer.appendChild(repContainer);
+        if (hasMatchesRep) {
+            repContainer.appendChild(gridDiv);
+            repsContainer.appendChild(repContainer);
+        }
     });
+
+    if (repsContainer.innerHTML === '' && searchMapRep) {
+        repsContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-person-x fs-1"></i><br>Nenhum funcionário encontrado com este termo.</div>';
+    }
+
+    // Renderizar resumo de gênero
+    renderizarHtmlResumoGenero('resumo-genero-republica', statsRep);
 }
 
 function popularFiltrosMapa() {

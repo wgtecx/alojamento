@@ -12,6 +12,7 @@
 
 ### 📊 Dashboard e Inteligência
 *   **KPIs em Tempo Real:** Acompanhamento instantâneo de vagas totais, ocupadas, disponíveis e taxa de ocupação percentual.
+*   **Inteligência de Gênero:** Quadro resumo de ocupação detalhado por perfil (Masculino, Feminino e Não Especificado).
 *   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.
 *   **Filtros Avançados:** Alternância rápida entre visão de Alojamentos Próprios, Repúblicas ou visão consolidada.
 
@@ -21,6 +22,8 @@
 *   **Ações Diretas (Quick Actions):** 
     *   **Check-in Rápido:** Clique em uma vaga livre para alocar um funcionário instantaneamente.
     *   **Check-out Rápido:** Clique no nome de um funcionário para liberar a vaga e calcular o custo da estadia.
+*   **Localizador de Funcionários:** Campo de busca inteligente para encontrar colaboradores por Nome ou CPF, destacando sua localização exata no mapa.
+*   **Resumo Dinâmico por Gênero:** Estatísticas de ocupação por gênero filtradas automaticamente de acordo com o bloco ou república selecionada.
 *   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou de gênero não especificado.
 
 ### 👥 Gestão de Cadastros
