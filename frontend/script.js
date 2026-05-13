@@ -571,8 +571,18 @@ function renderizarMapaAlojamentos() {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeQuarto = quarto.nome.replace(/'/g, "\\'");
                         listaHTML += `
-                            <li class="employee-item" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')">
-                                <i class="bi bi-person"></i> ${func.nome}
+                            <li class="employee-item d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')">
+                                    <i class="bi bi-person"></i> ${func.nome}
+                                </div>
+                                <div class="btn-group ms-2">
+                                    <button class="btn btn-link btn-xs p-0 text-muted me-2" onclick="event.stopPropagation(); abrirModalTransferencia('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')" title="Transferir">
+                                        <i class="bi bi-arrow-left-right" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                    <button class="btn btn-link btn-xs p-0 text-danger" onclick="event.stopPropagation(); excluirAlocacao('${aloc.id}')" title="Excluir Check-in (Erro)">
+                                        <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                </div>
                             </li>
                         `;
                     }
@@ -758,8 +768,18 @@ function renderizarMapaRepublicas() {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeRep = republica.nome.replace(/'/g, "\\'");
                         listaHTML += `
-                            <li class="employee-item" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')">
-                                <i class="bi bi-person"></i> ${func.nome}
+                            <li class="employee-item d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')">
+                                    <i class="bi bi-person"></i> ${func.nome}
+                                </div>
+                                <div class="btn-group ms-2">
+                                    <button class="btn btn-link btn-xs p-0 text-muted me-2" onclick="event.stopPropagation(); abrirModalTransferencia('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')" title="Transferir">
+                                        <i class="bi bi-arrow-left-right" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                    <button class="btn btn-link btn-xs p-0 text-danger" onclick="event.stopPropagation(); excluirAlocacao('${aloc.id}')" title="Excluir Check-in (Erro)">
+                                        <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                </div>
                             </li>
                         `;
                     }
@@ -1500,14 +1520,16 @@ async function handleCheckin(e) {
         let refLocal = "";
         if (id_quarto) {
             const quarto = quartos.find(q => q.id === id_quarto);
-            if (quarto) { nomeLocal = "Alojamento " + quarto.nome; refLocal = "Bloco " + quarto.bloco; }
+            if (quarto) { nomeLocal = "Quarto " + quarto.nome; refLocal = "Alojamento " + quarto.bloco; }
         } else if (id_republica) {
             const rep = republicas.find(r => r.id === id_republica);
-            if (rep) { nomeLocal = "República " + rep.nome; refLocal = rep.endereco; }
+            if (rep) { nomeLocal = "República " + rep.nome; refLocal = "Geral"; }
         }
 
         if (func && func.telefone && confirm('Deseja enviar mensagem de aviso no WhatsApp do funcionário?')) {
-            const textoMsg = encodeURIComponent(`Olá ${func.nome}, você foi alocado em: ${nomeLocal} (${refLocal}).`);
+            const enderecoLocal = localObj.endereco || 'Consulte a recepção na chegada';
+            const saudacao = `Olá, ${func.nome}!\n\nSeja muito bem-vindo!\n\nÉ um prazer receber você em nossas acomodações.\n\nSua hospedagem será no ${nomeLocal} – ${refLocal}.\n\nEndereço: ${enderecoLocal}\n\nCaso precise de qualquer informação, estou à disposição!\n\nAtenciosamente,\nAlocaPro`;
+            const textoMsg = encodeURIComponent(saudacao);
             const linkWa = `https://wa.me/${func.telefone.replace(/\D/g, '')}?text=${textoMsg}`;
             window.open(linkWa, '_blank');
         }
@@ -1546,7 +1568,10 @@ async function handleCheckout(e) {
     const checkinDate = new Date(aloc.data_checkin);
     const now = new Date();
     const diffTime = Math.abs(now - checkinDate);
-    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (now.toDateString() === checkinDate.toDateString()) {
+        diffDays = 0;
+    }
     const valor_total = diffDays * valor_diaria;
 
     const data_checkout = now.toISOString();
@@ -1597,7 +1622,10 @@ function atualizarInfoCheckout() {
     const checkinDate = new Date(aloc.data_checkin);
     const now = new Date();
     const diffTime = Math.abs(now - checkinDate);
-    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (now.toDateString() === checkinDate.toDateString()) {
+        diffDays = 0;
+    }
     const valor_total = diffDays * valor_diaria;
 
     document.getElementById('tab-co-dias-hospedados').textContent = `${diffDays} dia(s)`;
@@ -1665,7 +1693,10 @@ window.abrirModalCheckoutRapido = function(id_alocacao, nome_funcionario, id_loc
     const checkinDate = new Date(aloc.data_checkin);
     const now = new Date();
     const diffTime = Math.abs(now - checkinDate);
-    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (now.toDateString() === checkinDate.toDateString()) {
+        diffDays = 0;
+    }
     const valor_total = diffDays * valor_diaria;
 
     document.getElementById('co-dias-hospedados').textContent = `${diffDays} dia(s)`;
@@ -1739,7 +1770,10 @@ async function handleCheckinRapido(e) {
         }
 
         if (func && func.telefone && confirm('Deseja enviar mensagem de aviso no WhatsApp do funcionário?')) {
-            const textoMsg = encodeURIComponent(`Olá ${func.nome}, você foi alocado em: ${nomeLocal} (${refLocal}).`);
+            const loc = tipo_local === 'q' ? quartos.find(q => q.id === id_local) : republicas.find(r => r.id === id_local);
+            const enderecoLocal = loc?.endereco || 'Consulte a recepção na chegada';
+            const saudacao = `Olá, ${func.nome}!\n\nSeja muito bem-vindo!\n\nÉ um prazer receber você em nossas acomodações.\n\nSua hospedagem será no ${nomeLocal} – ${refLocal}.\n\nEndereço: ${enderecoLocal}\n\nCaso precise de qualquer informação, estou à disposição!\n\nAtenciosamente,\nAlocaPro`;
+            const textoMsg = encodeURIComponent(saudacao);
             const linkWa = `https://wa.me/${func.telefone.replace(/\D/g, '')}?text=${textoMsg}`;
             window.open(linkWa, '_blank');
         }
@@ -2273,16 +2307,27 @@ async function excluirMF(id) {
 
 function popularSelectsModulosFuncoes() {
     const selectModulo = document.getElementById('func-modulo');
-    if(!selectModulo) return;
-
+    const selectModuloRel = document.getElementById('filter-relatorio-modulo');
+    
     const modulosUnicos = [...new Set(modulosFuncoes.map(mf => mf.modulo))].sort();
     
-    const valorAtual = selectModulo.value;
-    selectModulo.innerHTML = '<option value="">Selecione...</option>';
-    modulosUnicos.forEach(m => {
-        selectModulo.innerHTML += `<option value="${m}">${m}</option>`;
-    });
-    selectModulo.value = valorAtual;
+    if (selectModulo) {
+        const valorAtual = selectModulo.value;
+        selectModulo.innerHTML = '<option value="">Selecione...</option>';
+        modulosUnicos.forEach(m => {
+            selectModulo.innerHTML += `<option value="${m}">${m}</option>`;
+        });
+        selectModulo.value = valorAtual;
+    }
+
+    if (selectModuloRel) {
+        const valorAtualRel = selectModuloRel.value;
+        selectModuloRel.innerHTML = '<option value="todos">Todos</option>';
+        modulosUnicos.forEach(m => {
+            selectModuloRel.innerHTML += `<option value="${m}">${m}</option>`;
+        });
+        selectModuloRel.value = valorAtualRel;
+    }
 }
 
 window.filtrarFuncoesPorModuloFuncionario = function() {
@@ -2392,49 +2437,110 @@ function renderizarRelatorioOcupacao() {
     const tfoot = document.getElementById('lista-ocupacao-tfoot');
     if(!tbody) return;
 
+    // Obter Filtros
+    const filterData = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterModulo = document.getElementById('filter-relatorio-modulo')?.value || 'todos';
+    const filterTipo = document.getElementById('filter-relatorio-tipo')?.value || 'todos';
+    const filterBusca = document.getElementById('filter-relatorio-busca')?.value.toLowerCase() || '';
+
+    // Determinar Alocações para a Data de Referência
+    let alocsRef = alocacoesAtivas;
+    if (filterData) {
+        const dBase = new Date(filterData + 'T23:59:59');
+        alocsRef = alocacoes.filter(a => {
+            const dIn = new Date(a.data_checkin);
+            const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
+            return dIn <= dBase && (!dOut || dOut >= dBase);
+        });
+    }
+
     tbody.innerHTML = '';
     
-    // Unificar quartos e repúblicas ativos
-    const locais = [
-        ...quartos.filter(q => q.ativo !== false).map(q => ({...q, tipo: 'Alojamento', id_unificado: 'q_'+q.id})),
-        ...republicas.filter(r => r.ativo !== false).map(r => ({...r, tipo: 'República', id_unificado: 'r_'+r.id}))
-    ].sort((a, b) => (a.modulo || '').localeCompare(b.modulo || '') || (a.bloco || '').localeCompare(b.bloco || ''));
+    // Unificar locais
+    let locaisFiltrados = [
+        ...quartos.map(q => ({...q, tipo: 'Alojamento', id_unificado: 'q_'+q.id})),
+        ...republicas.map(r => ({...r, tipo: 'República', id_unificado: 'r_'+r.id}))
+    ];
 
-    if(locais.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">Nenhum local ativo encontrado.</td></tr>';
-        document.getElementById('pagination-ocupacao').innerHTML = '';
+    // Aplicar Filtros de Local e Tipo
+    if (filterTipo !== 'todos') {
+        locaisFiltrados = locaisFiltrados.filter(l => l.tipo.toLowerCase() === filterTipo.toLowerCase());
+    }
+    if (filterBusca) {
+        locaisFiltrados = locaisFiltrados.filter(l => 
+            l.nome.toLowerCase().includes(filterBusca) || 
+            (l.bloco && l.bloco.toLowerCase().includes(filterBusca))
+        );
+    }
+
+    // Filtrar por Módulo (Verifica se há alguém do módulo no local na data ref)
+    if (filterModulo !== 'todos') {
+        locaisFiltrados = locaisFiltrados.filter(l => {
+            const alocsLocal = alocsRef.filter(a => l.tipo === 'Alojamento' ? a.id_quarto === l.id : a.id_republica === l.id);
+            return alocsLocal.some(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        });
+    }
+
+    if(locaisFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">Nenhum local encontrado com os filtros aplicados.</td></tr>';
+        if(document.getElementById('pagination-ocupacao')) document.getElementById('pagination-ocupacao').innerHTML = '';
+        if(tfoot) tfoot.innerHTML = '';
         return;
     }
 
     let totVagas = 0, totOcup = 0, totOcio = 0, totValOcup = 0, totValOcio = 0;
 
-    // Calcular Totais Gerais (Sempre sobre o set completo)
-    locais.forEach(loc => {
+    // Calcular Totais (Baseado no que está filtrado)
+    locaisFiltrados.forEach(loc => {
         const isQuarto = loc.tipo === 'Alojamento';
-        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        
+        if (filterModulo !== 'todos') {
+            alocs = alocs.filter(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        }
+
         const ocupadas = alocs.length;
         const ociosas = Math.max(0, loc.capacidade - ocupadas);
         totVagas += loc.capacidade;
         totOcup += ocupadas;
         totOcio += ociosas;
         totValOcup += ocupadas * (loc.valor_diaria || 0);
-        totValOcio += ociosas * (loc.valor_diaria_ociosa || 0);
+        totValOcio += ociosas * (loc.valor_diaria || 0);
     });
 
     // Paginar
     const start = (currentPageOcupacao - 1) * itemsPerPage;
-    const paginated = locais.slice(start, start + itemsPerPage);
+    const paginated = locaisFiltrados.slice(start, start + itemsPerPage);
 
     paginated.forEach(loc => {
         const isQuarto = loc.tipo === 'Alojamento';
-        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
         
+        if (filterModulo !== 'todos') {
+            alocs = alocs.filter(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        }
+
         const ocupadas = alocs.length;
         const ociosas = Math.max(0, loc.capacidade - ocupadas);
         const taxa = loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0;
         
         const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+        const vOcio = ociosas * (loc.valor_diaria || 0);
         const vTotal = vOcup + vOcio;
 
         tbody.innerHTML += `
@@ -2478,7 +2584,7 @@ function renderizarRelatorioOcupacao() {
         </tr>
     `;
 
-    renderPagination(locais.length, currentPageOcupacao, 'pagination-ocupacao', 'changePageOcupacao');
+    renderPagination(locaisFiltrados.length, currentPageOcupacao, 'pagination-ocupacao', 'changePageOcupacao');
 }
 
 window.changePageOcupacao = function(page) {
@@ -2487,18 +2593,67 @@ window.changePageOcupacao = function(page) {
 }
 
 window.exportarRelatorioOcupacaoExcel = function() {
-    const locais = [
-        ...quartos.filter(q => q.ativo !== false).map(q => ({...q, tipo: 'Alojamento'})),
-        ...republicas.filter(r => r.ativo !== false).map(r => ({...r, tipo: 'República'}))
+    // Obter os mesmos filtros da tela
+    const filterData = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterModulo = document.getElementById('filter-relatorio-modulo')?.value || 'todos';
+    const filterTipo = document.getElementById('filter-relatorio-tipo')?.value || 'todos';
+    const filterBusca = document.getElementById('filter-relatorio-busca')?.value.toLowerCase() || '';
+
+    // Determinar Alocações para a Data de Referência
+    let alocsRef = alocacoesAtivas;
+    if (filterData) {
+        const dBase = new Date(filterData + 'T23:59:59');
+        alocsRef = alocacoes.filter(a => {
+            const dIn = new Date(a.data_checkin);
+            const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
+            return dIn <= dBase && (!dOut || dOut >= dBase);
+        });
+    }
+
+    // Unificar locais e aplicar filtros
+    let locaisFiltrados = [
+        ...quartos.map(q => ({...q, tipo: 'Alojamento'})),
+        ...republicas.map(r => ({...r, tipo: 'República'}))
     ];
 
-    const data = locais.map(loc => {
+    if (filterTipo !== 'todos') {
+        locaisFiltrados = locaisFiltrados.filter(l => l.tipo.toLowerCase() === filterTipo.toLowerCase());
+    }
+    if (filterBusca) {
+        locaisFiltrados = locaisFiltrados.filter(l => 
+            l.nome.toLowerCase().includes(filterBusca) || 
+            (l.bloco && l.bloco.toLowerCase().includes(filterBusca))
+        );
+    }
+    if (filterModulo !== 'todos') {
+        locaisFiltrados = locaisFiltrados.filter(l => {
+            const alocsLocal = alocsRef.filter(a => l.tipo === 'Alojamento' ? a.id_quarto === l.id : a.id_republica === l.id);
+            return alocsLocal.some(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        });
+    }
+
+    const data = locaisFiltrados.map(loc => {
         const isQuarto = loc.tipo === 'Alojamento';
-        const alocs = alocacoesAtivas.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        
+        if (filterModulo !== 'todos') {
+            alocs = alocs.filter(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        }
+
         const ocupadas = alocs.length;
         const ociosas = Math.max(0, loc.capacidade - ocupadas);
         const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+        const vOcio = ociosas * (loc.valor_diaria || 0);
 
         return {
             'Módulo': loc.modulo || 'N/A',
@@ -2509,8 +2664,7 @@ window.exportarRelatorioOcupacaoExcel = function() {
             'Ocupadas': ocupadas,
             'Ociosas': ociosas,
             'Taxa Ocup. (%)': loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0,
-            'Diária Ocupada': loc.valor_diaria,
-            'Diária Ociosa': loc.valor_diaria_ociosa,
+            'Valor Diária': loc.valor_diaria,
             'Total Ocupado (R$)': vOcup,
             'Total Ocioso (R$)': vOcio,
             'Resumo Total (R$)': vOcup + vOcio
@@ -2520,7 +2674,160 @@ window.exportarRelatorioOcupacaoExcel = function() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Ocupação");
-    XLSX.writeFile(wb, `Relatorio_Ocupacao_${new Date().toISOString().slice(0,10)}.xlsx`);
-    showToast('Relatório exportado!', 'success');
+    XLSX.writeFile(wb, `Relatorio_Ocupacao_${filterData || new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('Relatório exportado com filtros!', 'success');
 }
 
+// Funções de Gerenciamento de Alocações (Transferir e Excluir)
+window.excluirAlocacao = async function(id) {
+    const aloc = alocacoesAtivas.find(a => a.id === id);
+    if (!aloc) return;
+
+    const checkinDate = new Date(aloc.data_checkin);
+    const now = new Date();
+    const diffHours = (now - checkinDate) / (1000 * 60 * 60);
+
+    // Trava de Segurança: Mais de 24h não pode excluir, tem que dar check-out
+    if (diffHours > 24) {
+        showToast('Esta alocação já possui mais de 24h e não pode ser excluída para não afetar o histórico. Realize o Check-out para encerrá-la.', 'warning');
+        return;
+    }
+
+    if(!confirm('Deseja realmente EXCLUIR este check-in? Use apenas para corrigir erros de lançamento imediato. Esta ação removerá o registro permanentemente.')) return;
+    
+    const { error } = await supabaseClient.from('alocacao').delete().eq('id', id);
+    if (error) showToast('Erro ao excluir: ' + error.message, 'danger');
+    else {
+        showToast('Check-in removido com sucesso!', 'success');
+        await loadData();
+    }
+}
+
+window.abrirModalTransferencia = function(idAloc, nomeFunc, idOrigem, tipoOrigem) {
+    const aloc = alocacoesAtivas.find(a => a.id === idAloc);
+    if(!aloc) return;
+
+    const func = funcionarios.find(f => f.id === aloc.id_funcionario);
+    if(!func) return;
+
+    document.getElementById('transf-alocacao-id').value = idAloc;
+    document.getElementById('transf-origem-id').value = idOrigem;
+    document.getElementById('transf-origem-tipo').value = tipoOrigem;
+    document.getElementById('transf-funcionario-nome').textContent = nomeFunc;
+
+    const selectDestino = document.getElementById('transf-destino');
+    selectDestino.innerHTML = '<option value="">Selecione o local de destino...</option>';
+
+    // Unificar todos os locais ativos com vagas
+    const todosLocais = [
+        ...quartos.filter(q => q.ativo !== false).map(q => ({...q, tipo: 'q', desc: `Alojamento ${q.nome} (Bloco ${q.bloco})`})),
+        ...republicas.filter(r => r.ativo !== false).map(r => ({...r, tipo: 'r', desc: `República ${r.nome} - ${r.quarto || 'Geral'}`}))
+    ];
+
+    todosLocais.forEach(loc => {
+        // Pular o local atual
+        if (loc.id === idOrigem && ( (tipoOrigem === 'q' && loc.tipo === 'q') || (tipoOrigem === 'r' && loc.tipo === 'r') )) return;
+
+        // Verificar gênero
+        if (loc.sexo_permitido !== 'A' && loc.sexo_permitido !== func.sexo) return;
+
+        // Verificar vaga livre
+        const ocup = alocacoesAtivas.filter(a => loc.tipo === 'q' ? a.id_quarto === loc.id : a.id_republica === loc.id).length;
+        if (ocup >= loc.capacidade) return;
+
+        selectDestino.innerHTML += `<option value="${loc.tipo}|${loc.id}">${loc.desc}</option>`;
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('modalTransferencia'));
+    modal.show();
+}
+
+async function handleTransferencia(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-transf');
+    if(!btn) return;
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Processando...';
+
+    const idAlocOrigem = document.getElementById('transf-alocacao-id').value;
+    const destinoRaw = document.getElementById('transf-destino').value; // Formato: tipo|id
+    if(!destinoRaw) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        return;
+    }
+
+    const [tipoDest, idDest] = destinoRaw.split('|');
+    const alocOrigem = alocacoesAtivas.find(a => a.id === idAlocOrigem);
+    
+    try {
+        const now = new Date();
+        const dIn = new Date(alocOrigem.data_checkin);
+        const diffTime = Math.abs(now - dIn);
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (now.toDateString() === dIn.toDateString()) diffDays = 0;
+
+        // 1. Check-out da Origem (Usando apenas data_checkout para encerrar)
+        const { error: errorOut } = await supabaseClient.from('alocacao').update({
+            data_checkout: now.toISOString(),
+            valor_total: diffDays * (alocOrigem.valor_diaria_contratado || 0)
+        }).eq('id', idAlocOrigem);
+
+        if(errorOut) throw errorOut;
+
+        // 2. Check-in no Destino
+        const localDestObj = tipoDest === 'q' ? quartos.find(q => q.id === idDest) : republicas.find(r => r.id === idDest);
+        const payloadNew = {
+            id_funcionario: alocOrigem.id_funcionario,
+            data_checkin: now.toISOString(),
+            valor_diaria_contratado: localDestObj.valor_diaria || 0,
+            id_empresa: alocOrigem.id_empresa
+        };
+        if (tipoDest === 'q') payloadNew.id_quarto = idDest;
+        else payloadNew.id_republica = idDest;
+
+        const { error: errorIn } = await supabaseClient.from('alocacao').insert([payloadNew]);
+        if(errorIn) throw errorIn;
+
+        showToast('Funcionário transferido com sucesso!', 'success');
+        const modalEl = document.getElementById('modalTransferencia');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if(modalInstance) modalInstance.hide();
+        
+        // Disparar WhatsApp de nova alocação (Opcional)
+        const func = funcionarios.find(f => f.id === alocOrigem.id_funcionario);
+        if (func && func.telefone && confirm('Deseja enviar a nova localização para o WhatsApp do funcionário?')) {
+            let nomeDestino = "";
+            let refDestino = "";
+            if (tipoDest === 'q') {
+                nomeDestino = "Quarto " + localDestObj.nome;
+                refDestino = "Alojamento " + localDestObj.bloco;
+            } else {
+                nomeDestino = "República " + localDestObj.nome;
+                refDestino = "Geral";
+            }
+            const enderecoLocal = localDestObj.endereco || 'Consulte a recepção na chegada';
+            
+            const saudacao = `Olá, ${func.nome}!\n\nInformamos que sua hospedagem foi alterada.\n\nSua nova acomodação será no ${nomeDestino} – ${refDestino}.\n\nEndereço: ${enderecoLocal}\n\nCaso precise de qualquer informação, estamos à disposição!\n\nAtenciosamente,\nAlocaPro`;
+            const textoMsg = encodeURIComponent(saudacao);
+            const linkWa = `https://wa.me/${func.telefone.replace(/\D/g, '')}?text=${textoMsg}`;
+            window.open(linkWa, '_blank');
+        }
+
+        await loadData();
+    } catch (error) {
+        showToast('Erro na transferência: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// Registrar Listener de Transferência
+document.addEventListener('submit', (e) => {
+    if(e.target && e.target.id === 'form-transferencia') {
+        handleTransferencia(e);
+    }
+});

@@ -14,6 +14,11 @@
 *   **KPIs em Tempo Real:** Acompanhamento instantâneo de vagas totais, ocupadas, disponíveis e taxa de ocupação percentual.
 *   **Inteligência de Gênero:** Quadro resumo de ocupação detalhado por perfil (Masculino, Feminino e Não Especificado).
 *   **Filtros de Precisão (Cascata):** Capacidade de filtrar o dashboard por categoria (Alojamentos/Repúblicas) e mergulhar na análise individual de cada unidade/quarto para auditoria detalhada.
+*   **Relatórios de Auditoria (Data Base):** O Relatório de Ocupação agora permite "viajar no tempo", mostrando a ocupação exata de qualquer data retroativa para conferência de faturas e auditoria financeira.
+*   **Filtros de Relatório:** Recortes detalhados por Módulo, Tipo de Local e busca por nome, com exportação inteligente para Excel (respeita todos os filtros ativos).
+*   **Gestão de Mobilidade (Transferência)**: Botão de transferência rápida que permite mover funcionários entre quartos ou alojamentos com um clique, automatizando o check-out/check-in.
+*   **Correção de Erros (Carência Zero)**: Inteligência que detecta check-outs no mesmo dia do check-in e aplica valor zero automaticamente, ideal para correções imediatas e transferências.
+*   **Exclusão de Registros**: Opção de excluir alocações diretamente no mapa para anular erros de lançamento sem afetar o histórico financeiro.
 *   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.
 
 ### 🗺️ Mapa de Alojamento Visual (Interactive Grid)
