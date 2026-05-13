@@ -1,5 +1,7 @@
 let currentUser = null;
 let currentCompanyId = null;
+let filterStatusMapAloj = 'todos';
+let filterStatusMapRep = 'todos';
 
 // Elementos da UI
 const userNameEl = document.getElementById('user-name');
@@ -552,6 +554,11 @@ function renderizarMapaAlojamentos() {
                 statusText = 'Quase cheio';
             }
 
+            // APLICAR FILTRO DE STATUS (NOVO)
+            if (filterStatusMapAloj !== 'todos' && statusText !== filterStatusMapAloj) {
+                return; // Oculta o card se não bater com o filtro de legenda
+            }
+
             // Montar lista de funcionários / vagas
             let listaHTML = '<ul class="employee-list">';
             let vagasLivres = capacidade - ocupacaoAtual;
@@ -749,6 +756,11 @@ function renderizarMapaRepublicas() {
             } else if (ocupacaoAtual >= capacidade / 2 && ocupacaoAtual > 0) {
                 statusBadge = 'badge-almost';
                 statusText = 'Quase cheio';
+            }
+
+            // APLICAR FILTRO DE STATUS (NOVO)
+            if (filterStatusMapRep !== 'todos' && statusText !== filterStatusMapRep) {
+                return; // Oculta o card se não bater com o filtro de legenda
             }
 
             let listaHTML = '<ul class="employee-list">';
@@ -2572,7 +2584,7 @@ function renderizarRelatorioOcupacao() {
 
     tfoot.innerHTML = `
         <tr>
-            <td colspan="2" class="text-end">TOTAIS GERAIS:</td>
+            <td colspan="2" class="text-end">TOTAL GERAL:</td>
             <td class="text-center">${totVagas}</td>
             <td class="text-center">${totOcup}</td>
             <td class="text-center">${totOcio}</td>
@@ -2831,3 +2843,28 @@ document.addEventListener('submit', (e) => {
         handleTransferencia(e);
     }
 });
+
+window.toggleFilterStatusMap = function(tipo, status) {
+    const isAloj = tipo === 'alojamento';
+    const current = isAloj ? filterStatusMapAloj : filterStatusMapRep;
+
+    // Se clicar no mesmo, remove o filtro
+    const novoStatus = (current === status) ? 'todos' : status;
+
+    if (isAloj) filterStatusMapAloj = novoStatus;
+    else filterStatusMapRep = novoStatus;
+
+    // Atualizar UI das legendas
+    const containerId = isAloj ? 'sec-mapa' : 'sec-mapa-republicas';
+    const legendItems = document.querySelectorAll(`#${containerId} .legend-item`);
+    
+    legendItems.forEach(item => {
+        item.classList.remove('active-filter');
+        if (novoStatus !== 'todos' && item.textContent.trim().includes(status)) {
+            item.classList.add('active-filter');
+        }
+    });
+
+    if (isAloj) renderizarMapaAlojamentos();
+    else renderizarMapaRepublicas();
+}

@@ -269,9 +269,9 @@
                 </div>
 
                 <div class="map-legend">
-                    <div class="legend-item"><span class="dot dot-available"></span> Disponível</div>
-                    <div class="legend-item"><span class="dot dot-almost"></span> Quase cheio</div>
-                    <div class="legend-item"><span class="dot dot-full"></span> Lotado</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('alojamento', 'Disponível')"><span class="dot dot-available"></span> Disponível</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('alojamento', 'Quase cheio')"><span class="dot dot-almost"></span> Quase cheio</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('alojamento', 'Lotado')"><span class="dot dot-full"></span> Lotado</div>
                 </div>
 
                 <div id="rooms-container">
@@ -309,9 +309,9 @@
                 </div>
 
                 <div class="map-legend">
-                    <div class="legend-item"><span class="dot dot-available"></span> Disponível</div>
-                    <div class="legend-item"><span class="dot dot-almost"></span> Quase cheio</div>
-                    <div class="legend-item"><span class="dot dot-full"></span> Lotado</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('republica', 'Disponível')"><span class="dot dot-available"></span> Disponível</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('republica', 'Quase cheio')"><span class="dot dot-almost"></span> Quase cheio</div>
+                    <div class="legend-item" onclick="toggleFilterStatusMap('republica', 'Lotado')"><span class="dot dot-full"></span> Lotado</div>
                 </div>
 
                 <div id="reps-container">
@@ -1259,6 +1259,25 @@
             </div>
         </div>
     </div>
+    <style>
+        .legend-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        .legend-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .legend-item.active-filter {
+            background: #fff;
+            border-color: #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: bold;
+            color: #0d6efd;
+        }
+    </style>
 </body>
 
 </html>
