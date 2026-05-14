@@ -1318,6 +1318,15 @@ async function handleNovoFuncionario(e) {
     const payload = { nome, cpf, telefone, sexo, id_modulo_funcao };
     if (currentCompanyId) payload.id_empresa = currentCompanyId;
 
+    // Validação de CPF Duplicado
+    const cpfDuplicado = funcionarios.find(f => f.cpf === cpf && f.id !== id);
+    if (cpfDuplicado) {
+        showToast(`Este CPF já está cadastrado para o funcionário: ${cpfDuplicado.nome}`, 'warning');
+        btn.disabled = false;
+        btn.innerHTML = id ? 'Salvar Alterações' : 'Cadastrar Funcionário';
+        return;
+    }
+
     let error;
     if (id) {
         const { error: updateError } = await supabaseClient.from('funcionario').update(payload).eq('id', id);
@@ -2837,11 +2846,42 @@ async function handleTransferencia(e) {
     }
 }
 
-// Registrar Listener de Transferência
-document.addEventListener('submit', (e) => {
-    if(e.target && e.target.id === 'form-transferencia') {
-        handleTransferencia(e);
+// Máscaras de Input
+function aplicarMascaras() {
+    const cpfInput = document.getElementById('func-cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, "");
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 9) v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, "$1.$2.$3-$4");
+            else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+            else if (v.length > 3) v = v.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+            e.target.value = v;
+        });
     }
+
+    const telInput = document.getElementById('func-telefone');
+    if (telInput) {
+        telInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, "");
+            if (v.length > 13) v = v.slice(0, 13);
+            if (v.length > 12) v = v.replace(/^(\d{2})(\d{2})(\d{5})(\d{4})$/, "+$1 ($2) $3-$4");
+            else if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+            else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4,5})$/, "($1) $2");
+            e.target.value = v;
+        });
+    }
+}
+
+// Registrar Listeners e Máscaras
+document.addEventListener('DOMContentLoaded', () => {
+    aplicarMascaras();
+    
+    document.addEventListener('submit', (e) => {
+        if(e.target && e.target.id === 'form-transferencia') {
+            handleTransferencia(e);
+        }
+    });
 });
 
 window.toggleFilterStatusMap = function(tipo, status) {
