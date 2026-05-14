@@ -41,7 +41,7 @@
 *   **Inativação Inteligente:** Possibilidade de desativar locais para manutenção com registro de motivo.
 
 ### 📑 Relatórios e Auditoria
-*   **Relatório de Ocupação:** Visão consolidada de vagas ocupadas e ociosas com impacto financeiro.
+*   **Relatório de Ocupação:** Visão consolidada de vagas ocupadas e ociosas com cálculo financeiro individualizado (precificação independente para diárias ocupadas e diárias ociosas).
 *   **Relatório Individual:** Histórico completo de estadias por funcionário com cálculo automático de dias alocados.
 *   **Exportação Inteligente:** Módulos de exportação para **Excel (XLSX)** em todos os relatórios gerenciais.
 *   **Filtros de Período:** Pesquisa por data de entrada/saída e busca por nome do colaborador.

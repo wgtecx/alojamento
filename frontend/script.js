@@ -2536,7 +2536,7 @@ function renderizarRelatorioOcupacao() {
         totOcup += ocupadas;
         totOcio += ociosas;
         totValOcup += ocupadas * (loc.valor_diaria || 0);
-        totValOcio += ociosas * (loc.valor_diaria || 0);
+        totValOcio += ociosas * (loc.valor_diaria_ociosa || 0);
     });
 
     // Paginar
@@ -2561,7 +2561,7 @@ function renderizarRelatorioOcupacao() {
         const taxa = loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0;
         
         const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria || 0);
+        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
         const vTotal = vOcup + vOcio;
 
         tbody.innerHTML += `
@@ -2674,7 +2674,7 @@ window.exportarRelatorioOcupacaoExcel = function() {
         const ocupadas = alocs.length;
         const ociosas = Math.max(0, loc.capacidade - ocupadas);
         const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria || 0);
+        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
 
         return {
             'Módulo': loc.modulo || 'N/A',
