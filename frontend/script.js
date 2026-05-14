@@ -1091,10 +1091,13 @@ function renderizarListaFuncionarios() {
             }
         }
 
+        const cpfValido = validarCPF(f.cpf);
+        const cpfHtml = cpfValido ? (f.cpf || '-') : `<span class="text-danger fw-bold" title="CPF Inválido">${f.cpf || '-'} <i class="bi bi-exclamation-triangle-fill"></i></span>`;
+
         tbody.innerHTML += `
             <tr>
                 <td class="fw-medium"><i class="bi bi-person me-2 text-muted"></i>${f.nome}</td>
-                <td>${f.cpf || '-'}</td>
+                <td>${cpfHtml}</td>
                 <td><small class="text-muted">${mf ? mf.modulo + ' - ' + mf.funcao : '-'}</small></td>
                 <td>${f.telefone || '-'}</td>
                 <td>${statusBadge}</td>
@@ -1317,6 +1320,13 @@ async function handleNovoFuncionario(e) {
 
     const payload = { nome, cpf, telefone, sexo, id_modulo_funcao };
     if (currentCompanyId) payload.id_empresa = currentCompanyId;
+
+    if (!validarCPF(cpf)) {
+        showToast('CPF Inválido! Verifique a numeração digitada.', 'warning');
+        btn.disabled = false;
+        btn.innerHTML = id ? 'Salvar Alterações' : 'Cadastrar Funcionário';
+        return;
+    }
 
     // Validação de CPF Duplicado
     const cpfDuplicado = funcionarios.find(f => f.cpf === cpf && f.id !== id);
@@ -2844,6 +2854,28 @@ async function handleTransferencia(e) {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
+}
+
+function validarCPF(cpf) {
+    if (!cpf) return false;
+    cpf = cpf.replace(/[^\d]+/g,'');
+    if(cpf == '') return false;
+    if (cpf.length != 11 || 
+        cpf == "00000000000" || cpf == "11111111111" || cpf == "22222222222" || 
+        cpf == "33333333333" || cpf == "44444444444" || cpf == "55555555555" || 
+        cpf == "66666666666" || cpf == "77777777777" || cpf == "88888888888" || cpf == "99999999999")
+            return false;
+    let add = 0;
+    for (let i=0; i < 9; i ++) add += parseInt(cpf.charAt(i)) * (10 - i);
+    let rev = 11 - (add % 11);
+    if (rev == 10 || rev == 11) rev = 0;
+    if (rev != parseInt(cpf.charAt(9))) return false;
+    add = 0;
+    for (let i = 0; i < 10; i ++) add += parseInt(cpf.charAt(i)) * (11 - i);
+    rev = 11 - (add % 11);
+    if (rev == 10 || rev == 11) rev = 0;
+    if (rev != parseInt(cpf.charAt(10))) return false;
+    return true;
 }
 
 // Máscaras de Input
