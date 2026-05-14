@@ -18,7 +18,7 @@
 *   **Relatórios de Auditoria (Data Base):** O Relatório de Ocupação agora permite "viajar no tempo", mostrando a ocupação exata de qualquer data retroativa para conferência de faturas e auditoria financeira.
 *   **Filtros de Relatório:** Recortes detalhados por Módulo, Tipo de Local e busca por nome, com exportação inteligente para Excel (respeita todos os filtros ativos).
 *   **Gestão de Mobilidade (Transferência)**: Mova funcionários entre quartos ou alojamentos com um clique, com atualização automática de check-out/check-in e disparo opcional de nova localização via WhatsApp.
-*   **Segurança e Auditoria**: Trava de segurança de 24 horas para exclusão de registros e validação de CPF duplicado, impedindo cadastros repetidos e protegendo o histórico.
+*   **Segurança e Auditoria**: Trava de segurança de 1 hora para exclusão de registros e validação de CPF duplicado, impedindo cadastros repetidos e protegendo o histórico.
 *   **Integridade e Usabilidade**: Máscaras inteligentes de entrada para CPF (000.000.000-00) e Telefone, garantindo padronização visual e facilidade de preenchimento.
 *   **Correção de Erros (Carência Zero)**: Detecção inteligente de check-outs no mesmo dia do check-in com aplicação automática de valor zero, ideal para correções rápidas de lançamento.
 *   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.

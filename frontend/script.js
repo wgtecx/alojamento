@@ -2708,9 +2708,9 @@ window.excluirAlocacao = async function(id) {
     const now = new Date();
     const diffHours = (now - checkinDate) / (1000 * 60 * 60);
 
-    // Trava de Segurança: Mais de 24h não pode excluir, tem que dar check-out
-    if (diffHours > 24) {
-        showToast('Esta alocação já possui mais de 24h e não pode ser excluída para não afetar o histórico. Realize o Check-out para encerrá-la.', 'warning');
+    // Trava de Segurança: Mais de 1h não pode excluir, tem que dar check-out
+    if (diffHours > 1) {
+        showToast('Esta alocação já possui mais de 1 hora e não pode ser excluída para proteger o histórico. Realize o Check-out para liberá-la.', 'warning');
         return;
     }
 
