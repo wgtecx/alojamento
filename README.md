@@ -56,7 +56,7 @@
 *   **Controle de Licença:** Alertas automáticos (7 dias de antecedência) e bloqueio imediato de acesso para empresas com licença expirada.
 
 ### 🎨 Experiência do Usuário (UX)
-*   **Identidade Visual:** Logomarca aprimorada e redimensionada na barra lateral para melhor visualização e balanço estético.
+*   **Identidade Visual:** Nova identidade visual aplicada com sucesso em toda a plataforma. Inclui a substituição do ícone de favicon (`logo_nova.png`), atualização da logo na tela de login, e a implementação de uma logomarca específica na barra lateral do dashboard (`logo_nova_barra.png`), ajustada com recuos negativos e escalas CSS para máximo aproveitamento de espaço em tela.
 *   **Navegação Inteligente:** Barra lateral com rolagem customizada, garantindo acesso a todos os menus em qualquer resolução de tela ou tamanho de janela.
 
 ---
