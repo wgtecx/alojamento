@@ -2568,7 +2568,8 @@ function renderizarRelatorioOcupacao() {
     let alocsRef = alocacoesAtivas;
     if (filterData) {
         const dBase = new Date(filterData + 'T23:59:59');
-        alocsRef = alocacoes.filter(a => {
+        const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
+        alocsRef = todasAlocacoes.filter(a => {
             const dIn = new Date(a.data_checkin);
             const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
             return dIn <= dBase && (!dOut || dOut >= dBase);
@@ -2724,7 +2725,8 @@ window.exportarRelatorioOcupacaoExcel = function() {
     let alocsRef = alocacoesAtivas;
     if (filterData) {
         const dBase = new Date(filterData + 'T23:59:59');
-        alocsRef = alocacoes.filter(a => {
+        const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
+        alocsRef = todasAlocacoes.filter(a => {
             const dIn = new Date(a.data_checkin);
             const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
             return dIn <= dBase && (!dOut || dOut >= dBase);
