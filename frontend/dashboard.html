@@ -1235,35 +1235,54 @@
     <script src="config.js"></script>
     <script src="script.js"></script>
     <!-- Modal Transferência de Funcionário -->
-    <div class="modal fade" id="modalTransferencia" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modalTransferencia" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Transferir Funcionário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-3">Transferindo <strong id="transf-funcionario-nome"></strong></p>
-                    <form id="form-transferencia">
-                        <input type="hidden" id="transf-alocacao-id">
-                        <input type="hidden" id="transf-origem-id">
-                        <input type="hidden" id="transf-origem-tipo">
-                        
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Destino</label>
-                            <select class="form-select" id="transf-destino" required>
-                                <option value="">Selecione o local de destino...</option>
-                            </select>
-                        </div>
-                        
-                        <div class="alert alert-warning small py-2 mb-4">
-                            <i class="bi bi-info-circle me-1"></i> A transferência realizará o check-out do local atual e o check-in automático no novo destino.
-                        </div>
+                    <div id="transf-form-container">
+                        <p class="mb-3">Transferindo <strong id="transf-funcionario-nome"></strong></p>
+                        <form id="form-transferencia">
+                            <input type="hidden" id="transf-alocacao-id">
+                            <input type="hidden" id="transf-origem-id">
+                            <input type="hidden" id="transf-origem-tipo">
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Destino</label>
+                                <select class="form-select" id="transf-destino" required>
+                                    <option value="">Selecione o local de destino...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="alert alert-warning small py-2 mb-4">
+                                <i class="bi bi-info-circle me-1"></i> A transferência realizará o check-out do local atual e o check-in automático no novo destino.
+                            </div>
 
-                        <button type="submit" class="btn btn-primary w-100" id="btn-save-transf">
-                            <i class="bi bi-arrow-left-right me-2"></i> Confirmar Transferência
-                        </button>
-                    </form>
+                            <button type="submit" class="btn btn-primary w-100" id="btn-save-transf">
+                                <i class="bi bi-arrow-left-right me-2"></i> Confirmar Transferência
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Container de Sucesso pós-transferência -->
+                    <div id="transf-success-container" class="d-none text-center py-3">
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold">Transferência Realizada!</h5>
+                        <p class="text-muted small mb-4">O funcionário foi movido com sucesso para o novo local.</p>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success" id="btn-transf-whatsapp">
+                                <i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp
+                            </button>
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

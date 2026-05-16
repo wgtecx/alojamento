@@ -2876,6 +2876,12 @@ window.abrirModalTransferencia = function(idAloc, nomeFunc, idOrigem, tipoOrigem
     document.getElementById('transf-origem-tipo').value = tipoOrigem;
     document.getElementById('transf-funcionario-nome').textContent = nomeFunc;
 
+    // Resetar UI do modal
+    document.getElementById('transf-form-container').classList.remove('d-none');
+    document.getElementById('transf-success-container').classList.add('d-none');
+    document.getElementById('btn-save-transf').disabled = false;
+    document.getElementById('btn-save-transf').innerHTML = '<i class="bi bi-arrow-left-right me-2"></i> Confirmar Transferência';
+
     const selectDestino = document.getElementById('transf-destino');
     selectDestino.innerHTML = '<option value="">Selecione o local de destino...</option>';
 
@@ -2953,34 +2959,39 @@ async function handleTransferencia(e) {
         if(errorIn) throw errorIn;
 
         showToast('Funcionário transferido com sucesso!', 'success');
-        const modalEl = document.getElementById('modalTransferencia');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if(modalInstance) modalInstance.hide();
         
-        // Disparar WhatsApp de nova alocação (Opcional)
+        // Preparar dados para o WhatsApp e atualizar UI
         const func = funcionarios.find(f => f.id === alocOrigem.id_funcionario);
-        if (func && func.telefone && confirm('Deseja enviar a nova localização para o WhatsApp do funcionário?')) {
-            let nomeDestino = "";
-            let refDestino = "";
-            if (tipoDest === 'q') {
-                nomeDestino = "Quarto " + localDestObj.nome;
-                refDestino = "Alojamento " + localDestObj.bloco;
-            } else {
-                nomeDestino = "República " + localDestObj.nome;
-                refDestino = "Geral";
-            }
-            const enderecoLocal = localDestObj.endereco || 'Consulte a recepção na chegada';
-            
+        let nomeDestino = "";
+        let refDestino = "";
+        if (tipoDest === 'q') {
+            nomeDestino = "Quarto " + localDestObj.nome;
+            refDestino = "Alojamento " + localDestObj.bloco;
+        } else {
+            nomeDestino = "República " + localDestObj.nome;
+            refDestino = "Geral";
+        }
+        const enderecoLocal = localDestObj.endereco || 'Consulte a recepção na chegada';
+
+        document.getElementById('transf-form-container').classList.add('d-none');
+        document.getElementById('transf-success-container').classList.remove('d-none');
+
+        // Configurar botão de WhatsApp
+        document.getElementById('btn-transf-whatsapp').onclick = () => {
             const saudacao = `Olá, ${func.nome}!\n\nInformamos que sua hospedagem foi alterada.\n\nSua nova acomodação será no ${nomeDestino} – ${refDestino}.\n\nEndereço: ${enderecoLocal}\n\nCaso precise de qualquer informação, estamos à disposição!\n\nAtenciosamente,\nAlocaPro`;
             const textoMsg = encodeURIComponent(saudacao);
             const linkWa = `https://wa.me/${func.telefone.replace(/\D/g, '')}?text=${textoMsg}`;
             window.open(linkWa, '_blank');
+        };
+
+        // Disparar WhatsApp automaticamente na primeira vez (opcional, mas solicitado manter o fluxo)
+        if (func && func.telefone) {
+            document.getElementById('btn-transf-whatsapp').click();
         }
 
         await loadData();
     } catch (error) {
         showToast('Erro na transferência: ' + error.message, 'danger');
-    } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }

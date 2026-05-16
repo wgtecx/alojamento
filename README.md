@@ -34,6 +34,7 @@
 *   **Filtro por Módulo de Alocação:** Novo seletor que isola a visualização dos locais que contêm funcionários de módulos específicos (ex: Mineração, Administrativo), permitindo uma gestão visual focada na força de trabalho.
 *   **Comunicação Integrada (WhatsApp):** Ícone de reenvio de mensagem de alocação diretamente no card do funcionário, permitindo enviar os detalhes da estadia novamente com um clique.
 *   **Tooltips Informativos:** Ao passar o mouse sobre o nome de um funcionário alocado, o sistema exibe instantaneamente sua função e a data/hora exata do check-in, facilitando o rastreio da estadia.
+*   **Transferência com Reenvio:** O modal de transferência agora oferece uma tela de sucesso com botão direto para o WhatsApp, permitindo múltiplos reenvios caso o pop-up do navegador seja bloqueado.
 *   **Resumo Dinâmico por Gênero:** Estatísticas de ocupação por gênero filtradas automaticamente de acordo com o bloco ou república selecionada.
 *   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou de gênero não especificado.
 
