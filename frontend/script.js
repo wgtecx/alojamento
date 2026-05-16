@@ -589,11 +589,14 @@ function renderizarMapaAlojamentos() {
                                     <i class="bi bi-person"></i> ${func.nome}
                                 </div>
                                 <div class="btn-group ms-2">
+                                    <button class="btn btn-link btn-xs p-0 text-success me-2" onclick="event.stopPropagation(); enviarWhatsappAlocacao('${func.id}', '${quarto.id}', 'q')" title="Enviar WhatsApp">
+                                        <i class="bi bi-whatsapp" style="font-size: 0.9rem;"></i>
+                                    </button>
                                     <button class="btn btn-link btn-xs p-0 text-muted me-2" onclick="event.stopPropagation(); abrirModalTransferencia('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')" title="Transferir">
-                                        <i class="bi bi-arrow-left-right" style="font-size: 0.7rem;"></i>
+                                        <i class="bi bi-arrow-left-right" style="font-size: 0.9rem;"></i>
                                     </button>
                                     <button class="btn btn-link btn-xs p-0 text-danger" onclick="event.stopPropagation(); excluirAlocacao('${aloc.id}')" title="Excluir Check-in (Erro)">
-                                        <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                                        <i class="bi bi-trash" style="font-size: 0.9rem;"></i>
                                     </button>
                                 </div>
                             </li>
@@ -800,11 +803,14 @@ function renderizarMapaRepublicas() {
                                     <i class="bi bi-person"></i> ${func.nome}
                                 </div>
                                 <div class="btn-group ms-2">
+                                    <button class="btn btn-link btn-xs p-0 text-success me-2" onclick="event.stopPropagation(); enviarWhatsappAlocacao('${func.id}', '${republica.id}', 'r')" title="Enviar WhatsApp">
+                                        <i class="bi bi-whatsapp" style="font-size: 0.9rem;"></i>
+                                    </button>
                                     <button class="btn btn-link btn-xs p-0 text-muted me-2" onclick="event.stopPropagation(); abrirModalTransferencia('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')" title="Transferir">
-                                        <i class="bi bi-arrow-left-right" style="font-size: 0.7rem;"></i>
+                                        <i class="bi bi-arrow-left-right" style="font-size: 0.9rem;"></i>
                                     </button>
                                     <button class="btn btn-link btn-xs p-0 text-danger" onclick="event.stopPropagation(); excluirAlocacao('${aloc.id}')" title="Excluir Check-in (Erro)">
-                                        <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                                        <i class="bi bi-trash" style="font-size: 0.9rem;"></i>
                                     </button>
                                 </div>
                             </li>
@@ -2766,6 +2772,46 @@ window.excluirAlocacao = async function(id) {
         showToast('Check-in removido com sucesso!', 'success');
         await loadData();
     }
+}
+
+window.enviarWhatsappAlocacao = function(idFuncionario, idLocal, tipoLocal) {
+    const func = funcionarios.find(f => f.id === idFuncionario);
+    if (!func || !func.telefone) {
+        showToast('Funcionário não encontrado ou sem telefone cadastrado.', 'warning');
+        return;
+    }
+
+    let localObj = null;
+    let nomeLocal = "";
+    let refLocal = "";
+
+    if (tipoLocal === 'q') {
+        localObj = quartos.find(q => q.id === idLocal);
+        if (localObj) {
+            nomeLocal = "Alojamento " + localObj.nome;
+            refLocal = "Bloco " + localObj.bloco;
+        }
+    } else {
+        localObj = republicas.find(r => r.id === idLocal);
+        if (localObj) {
+            nomeLocal = "República " + localObj.nome;
+            refLocal = localObj.endereco || 'Geral';
+        }
+    }
+
+    if (!localObj) {
+        showToast('Localização não encontrada.', 'danger');
+        return;
+    }
+
+    if (!confirm(`Deseja enviar a mensagem de alocação para ${func.nome}?`)) return;
+
+    const enderecoLocal = localObj.endereco || 'Consulte a recepção na chegada';
+    const saudacao = `Olá, ${func.nome}!\n\nSeja muito bem-vindo!\n\nÉ um prazer receber você em nossas acomodações.\n\nSua hospedagem será no ${nomeLocal} – ${refLocal}.\n\nEndereço: ${enderecoLocal}\n\nCaso precise de qualquer informação, estou à disposição!\n\nAtenciosamente,\nAlocaPro`;
+    
+    const textoMsg = encodeURIComponent(saudacao);
+    const linkWa = `https://wa.me/${func.telefone.replace(/\D/g, '')}?text=${textoMsg}`;
+    window.open(linkWa, '_blank');
 }
 
 window.abrirModalTransferencia = function(idAloc, nomeFunc, idOrigem, tipoOrigem) {
