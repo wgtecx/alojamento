@@ -33,6 +33,7 @@
 *   **Localizador de Funcionários:** Campo de busca inteligente para encontrar colaboradores por Nome ou CPF, destacando sua localização exata no mapa.
 *   **Filtro por Módulo de Alocação:** Novo seletor que isola a visualização dos locais que contêm funcionários de módulos específicos (ex: Mineração, Administrativo), permitindo uma gestão visual focada na força de trabalho.
 *   **Comunicação Integrada (WhatsApp):** Ícone de reenvio de mensagem de alocação diretamente no card do funcionário, permitindo enviar os detalhes da estadia novamente com um clique.
+*   **Tooltips Informativos:** Ao passar o mouse sobre o nome de um funcionário alocado, o sistema exibe instantaneamente sua função e a data/hora exata do check-in, facilitando o rastreio da estadia.
 *   **Resumo Dinâmico por Gênero:** Estatísticas de ocupação por gênero filtradas automaticamente de acordo com o bloco ou república selecionada.
 *   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou de gênero não especificado.
 

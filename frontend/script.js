@@ -603,9 +603,10 @@ function renderizarMapaAlojamentos() {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeQuarto = quarto.nome.replace(/'/g, "\\'");
                         
-                        // Buscar função para o tooltip
+                        // Buscar função e data de check-in para o tooltip
                         const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
-                        const funcDesc = mf ? `Função: ${mf.funcao}` : 'Função não informada';
+                        const checkinDate = new Date(aloc.data_checkin).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+                        const funcDesc = (mf ? `Função: ${mf.funcao}` : 'Função não informada') + `\nCheck-in: ${checkinDate}`;
 
                         listaHTML += `
                             <li class="employee-item d-flex justify-content-between align-items-center">
@@ -841,9 +842,10 @@ function renderizarMapaRepublicas() {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeRep = republica.nome.replace(/'/g, "\\'");
 
-                        // Buscar função para o tooltip
+                        // Buscar função e data de check-in para o tooltip
                         const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
-                        const funcDesc = mf ? `Função: ${mf.funcao}` : 'Função não informada';
+                        const checkinDate = new Date(aloc.data_checkin).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+                        const funcDesc = (mf ? `Função: ${mf.funcao}` : 'Função não informada') + `\nCheck-in: ${checkinDate}`;
 
                         listaHTML += `
                             <li class="employee-item d-flex justify-content-between align-items-center">
