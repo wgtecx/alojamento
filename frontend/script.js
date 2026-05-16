@@ -2791,6 +2791,32 @@ window.abrirModalDetalheOcupacao = function(idUnificado) {
             }
         });
 
+        // Lógica de Ociosidade (Novo: Para bater com o financeiro principal)
+        const diariasOcupadasNoPeriodo = listaDetalhe.reduce((acc, curr) => acc + curr.diarias, 0);
+        
+        // Total de diárias possíveis no local (Capacidade * Dias no Período)
+        let diasNoPeriodo = 1;
+        if (filterDataFim && filterDataIni) {
+            const ms = dEnd - dStart;
+            diasNoPeriodo = Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+        }
+        const capacidadeTotalDiarias = (loc.capacidade || 0) * diasNoPeriodo;
+        const diariasOciosas = Math.max(0, capacidadeTotalDiarias - diariasOcupadasNoPeriodo);
+        const valorOcioso = diariasOciosas * (loc.valor_diaria_ociosa || 0);
+
+        if (valorOcioso > 0) {
+            listaDetalhe.push({
+                nome: 'Custo de Ociosidade (Vagas Livres)',
+                modulo: 'N/A',
+                funcao: 'Vagas não ocupadas',
+                checkin: '-',
+                checkout: '-',
+                diarias: diariasOciosas,
+                valor: valorOcioso,
+                isOcioso: true
+            });
+        }
+
         tbody.innerHTML = '';
         const tfoot = document.getElementById('lista-detalhe-ocupacao-tfoot');
         if (tfoot) tfoot.innerHTML = '';
@@ -2801,16 +2827,21 @@ window.abrirModalDetalheOcupacao = function(idUnificado) {
             let totalDiarias = 0;
             let totalValor = 0;
 
-            listaDetalhe.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(d => {
+            // Ordenar: Primeiro funcionários, depois a linha de ociosidade
+            listaDetalhe.sort((a,b) => {
+                if (a.isOcioso) return 1;
+                if (b.isOcioso) return -1;
+                return a.nome.localeCompare(b.nome);
+            }).forEach(d => {
                 totalDiarias += d.diarias;
                 totalValor += d.valor;
                 tbody.innerHTML += `
-                    <tr>
+                    <tr class="${d.isOcioso ? 'table-warning opacity-75' : ''}">
                         <td class="ps-4 fw-medium text-nowrap">${d.nome}</td>
                         <td class="small text-muted">${d.modulo} / ${d.funcao}</td>
                         <td class="text-center small">${d.checkin}</td>
                         <td class="text-center small">${d.checkout}</td>
-                        <td class="text-center fw-bold text-primary">${d.diarias}</td>
+                        <td class="text-center fw-bold ${d.isOcioso ? 'text-dark' : 'text-primary'}">${d.diarias}</td>
                         <td class="text-end pe-4 fw-bold">R$ ${d.valor.toFixed(2)}</td>
                     </tr>
                 `;

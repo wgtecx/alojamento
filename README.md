@@ -46,11 +46,11 @@
 *   **Inativação Inteligente:** Possibilidade de desativar locais para manutenção com registro de motivo.
 
 ### 📑 Relatórios e Auditoria
-*   **Relatório de Ocupação Detalhado (Drill-down):** Capacidade de mergulhar em cada linha do relatório (ícone de lupa 🔍) para visualizar nominalmente os ocupantes de cada quarto/república no período selecionado, com contagem exata de diárias e valor financeiro por colaborador.
+*   **Relatório de Ocupação Detalhado (Drill-down):** Capacidade de mergulhar em cada linha do relatório (ícone de lupa 🔍) para visualizar nominalmente os ocupantes de cada unidade. O detalhamento agora inclui **Fechamento Financeiro Total**, listando tanto os funcionários alocados quanto o **Custo de Ociosidade (Vagas Livres)**, garantindo que o total do modal bata exatamente com o resumo financeiro principal para fins de auditoria.
 *   **Conferência de Períodos e Faturas:** Lógica de cálculo acumulado que permite extrair relatórios entre duas datas arbitrárias, essencial para auditoria de faturamento de prestadores de serviço e conferência de estadias.
 *   **Cálculo de Diárias Imutável:** O sistema utiliza o valor da diária vigente no momento do check-in, protegendo o faturamento histórico contra alterações de preço retroativas.
 *   **Exportação Inteligente:** Módulos de exportação para **Excel (XLSX)** disponíveis tanto no relatório geral quanto no detalhamento individual de cada local.
-*   **Impressão de Relatórios Oficiais:** Sistema de impressão customizado (`@media print`) que gera documentos formatados com cabeçalho oficial, logo da empresa e identificação completa da unidade (Bloco/Quarto), pronto para auditorias físicas.
+*   **Impressão de Relatórios Oficiais:** Sistema de impressão customizado (`@media print`) que gera documentos formatados com cabeçalho oficial, logo da empresa e identificação completa da unidade (Bloco/Quarto), pronto para auditorias físicas com aproveitamento máximo de papel.
 *   **Relatório Individual:** Histórico completo de estadias por funcionário com cálculo automático de dias alocados.
 
 ### 🛡️ Blindagem Financeira e Processos
