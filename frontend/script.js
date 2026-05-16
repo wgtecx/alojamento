@@ -486,6 +486,9 @@ function renderizarMapaAlojamentos() {
         blocosUnicos = blocosUnicos.filter(b => b === filtroBloco);
     }
 
+    // Aplicar Filtro de Módulo
+    const filtroModulo = document.getElementById('filter-mapa-modulo-aloj')?.value || 'todos';
+
     // Termo de Busca de Funcionário
     const searchMap = document.getElementById('search-mapa-alojamento')?.value.toLowerCase() || '';
 
@@ -512,7 +515,10 @@ function renderizarMapaAlojamentos() {
         const gridDiv = document.createElement('div');
         gridDiv.className = 'rooms-grid';
 
-        const quartosDoBloco = quartos.filter(q => q.bloco === bloco);
+        let quartosDoBloco = quartos.filter(q => q.bloco === bloco);
+        if (filtroModulo !== 'todos') {
+            quartosDoBloco = quartosDoBloco.filter(q => q.modulo === filtroModulo);
+        }
 
         quartosDoBloco.forEach(quarto => {
             const isAtivo = quarto.ativo !== false;
@@ -688,6 +694,9 @@ function renderizarMapaRepublicas() {
         nomesReps = nomesReps.filter(n => n === filtroRep);
     }
 
+    // Aplicar Filtro de Módulo
+    const filtroModuloRep = document.getElementById('filter-mapa-modulo-rep')?.value || 'todos';
+
     // Termo de Busca de Funcionário
     const searchMapRep = document.getElementById('search-mapa-republica')?.value.toLowerCase() || '';
 
@@ -696,7 +705,13 @@ function renderizarMapaRepublicas() {
 
     nomesReps.forEach(nomeRep => {
         let hasMatchesRep = false;
-        const quartosDaRep = republicas.filter(r => r.nome === nomeRep);
+        let quartosDaRep = republicas.filter(r => r.nome === nomeRep);
+        if (filtroModuloRep !== 'todos') {
+            quartosDaRep = quartosDaRep.filter(r => r.modulo === filtroModuloRep);
+        }
+        
+        if (quartosDaRep.length === 0) return;
+        
         const endereco = quartosDaRep[0].endereco;
 
         // Container da República
@@ -849,6 +864,8 @@ function renderizarMapaRepublicas() {
 function popularFiltrosMapa() {
     const selectBloco = document.getElementById('filter-mapa-bloco');
     const selectRep = document.getElementById('filter-mapa-republica');
+    const selectModuloAloj = document.getElementById('filter-mapa-modulo-aloj');
+    const selectModuloRep = document.getElementById('filter-mapa-modulo-rep');
     
     if (selectBloco) {
         const valorAtual = selectBloco.value;
@@ -870,6 +887,23 @@ function popularFiltrosMapa() {
         });
         selectRep.value = valorAtual || 'todos';
         if (selectRep.selectedIndex === -1) selectRep.value = 'todos';
+    }
+
+    const modulosUnicos = [...new Set(modulosFuncoes.map(mf => mf.modulo))].sort();
+    const optionsModulos = '<option value="todos">Todos os Módulos</option>' + modulosUnicos.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    if (selectModuloAloj) {
+        const valorAtual = selectModuloAloj.value;
+        selectModuloAloj.innerHTML = optionsModulos;
+        selectModuloAloj.value = valorAtual || 'todos';
+        if (selectModuloAloj.selectedIndex === -1) selectModuloAloj.value = 'todos';
+    }
+
+    if (selectModuloRep) {
+        const valorAtual = selectModuloRep.value;
+        selectModuloRep.innerHTML = optionsModulos;
+        selectModuloRep.value = valorAtual || 'todos';
+        if (selectModuloRep.selectedIndex === -1) selectModuloRep.value = 'todos';
     }
 }
 
