@@ -2559,22 +2559,14 @@ function renderizarRelatorioOcupacao() {
     if(!tbody) return;
 
     // Obter Filtros
-    const filterData = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterDataIni = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterDataFim = document.getElementById('filter-relatorio-data-fim')?.value || '';
     const filterModulo = document.getElementById('filter-relatorio-modulo')?.value || 'todos';
     const filterTipo = document.getElementById('filter-relatorio-tipo')?.value || 'todos';
     const filterBusca = document.getElementById('filter-relatorio-busca')?.value.toLowerCase() || '';
 
-    // Determinar Alocações para a Data de Referência
-    let alocsRef = alocacoesAtivas;
-    if (filterData) {
-        const dBase = new Date(filterData + 'T23:59:59');
-        const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
-        alocsRef = todasAlocacoes.filter(a => {
-            const dIn = new Date(a.data_checkin);
-            const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
-            return dIn <= dBase && (!dOut || dOut >= dBase);
-        });
-    }
+    const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
+    const isPeriodo = filterDataIni && filterDataFim && filterDataIni !== filterDataFim;
 
     tbody.innerHTML = '';
     
@@ -2586,7 +2578,12 @@ function renderizarRelatorioOcupacao() {
 
     // Aplicar Filtros de Local e Tipo
     if (filterTipo !== 'todos') {
-        locaisFiltrados = locaisFiltrados.filter(l => l.tipo.toLowerCase() === filterTipo.toLowerCase());
+        locaisFiltrados = locaisFiltrados.filter(l => {
+            const t = l.tipo.toLowerCase();
+            // Suporte a comparação com e sem acento para República
+            if (filterTipo === 'republica') return t === 'república' || t === 'republica';
+            return t === filterTipo.toLowerCase();
+        });
     }
     if (filterBusca) {
         locaisFiltrados = locaisFiltrados.filter(l => 
@@ -2595,11 +2592,12 @@ function renderizarRelatorioOcupacao() {
         );
     }
 
-    // Filtrar por Módulo (Verifica se há alguém do módulo no local na data ref)
+    // Filtrar por Módulo (Verifica se houve ocupação do módulo no local)
     if (filterModulo !== 'todos') {
         locaisFiltrados = locaisFiltrados.filter(l => {
-            const alocsLocal = alocsRef.filter(a => l.tipo === 'Alojamento' ? a.id_quarto === l.id : a.id_republica === l.id);
-            return alocsLocal.some(a => {
+            const isQuarto = l.tipo === 'Alojamento';
+            return todasAlocacoes.some(a => {
+                if (isQuarto ? a.id_quarto !== l.id : a.id_republica !== l.id) return false;
                 const func = funcionarios.find(f => f.id === a.id_funcionario);
                 if (!func) return false;
                 const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
@@ -2617,64 +2615,40 @@ function renderizarRelatorioOcupacao() {
 
     let totVagas = 0, totOcup = 0, totOcio = 0, totValOcup = 0, totValOcio = 0;
 
-    // Calcular Totais (Baseado no que está filtrado)
-    locaisFiltrados.forEach(loc => {
-        const isQuarto = loc.tipo === 'Alojamento';
-        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
-        
-        if (filterModulo !== 'todos') {
-            alocs = alocs.filter(a => {
-                const func = funcionarios.find(f => f.id === a.id_funcionario);
-                if (!func) return false;
-                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
-                return mf && mf.modulo === filterModulo;
-            });
-        }
-
-        const ocupadas = alocs.length;
-        const ociosas = Math.max(0, loc.capacidade - ocupadas);
-        totVagas += loc.capacidade;
-        totOcup += ocupadas;
-        totOcio += ociosas;
-        totValOcup += ocupadas * (loc.valor_diaria || 0);
-        totValOcio += ociosas * (loc.valor_diaria_ociosa || 0);
-    });
-
-    // Paginar
+    // Calcular Totais e Renderizar
     const start = (currentPageOcupacao - 1) * itemsPerPage;
     const paginated = locaisFiltrados.slice(start, start + itemsPerPage);
 
-    paginated.forEach(loc => {
-        const isQuarto = loc.tipo === 'Alojamento';
-        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
-        
-        if (filterModulo !== 'todos') {
-            alocs = alocs.filter(a => {
-                const func = funcionarios.find(f => f.id === a.id_funcionario);
-                if (!func) return false;
-                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
-                return mf && mf.modulo === filterModulo;
-            });
-        }
+    // Calculamos o total de TODOS os filtrados para o footer
+    locaisFiltrados.forEach(loc => {
+        const result = calcularDadosLocal(loc, filterDataIni, filterDataFim, filterModulo, todasAlocacoes);
+        totVagas += result.totalVagas;
+        totOcup += result.ocupadas;
+        totOcio += result.ociosas;
+        totValOcup += result.vOcup;
+        totValOcio += result.vOcio;
+    });
 
-        const ocupadas = alocs.length;
-        const ociosas = Math.max(0, loc.capacidade - ocupadas);
-        const taxa = loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0;
-        
-        const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
-        const vTotal = vOcup + vOcio;
+    paginated.forEach(loc => {
+        const res = calcularDadosLocal(loc, filterDataIni, filterDataFim, filterModulo, todasAlocacoes);
+        const taxa = res.totalVagas > 0 ? (res.ocupadas / res.totalVagas * 100).toFixed(1) : 0;
+        const vTotal = res.vOcup + res.vOcio;
 
         tbody.innerHTML += `
-            <tr>
+            <tr class="clickable-row">
+                <td class="text-center">
+                    <button class="btn btn-sm bg-light text-primary border shadow-sm" style="font-size: 0.75rem; padding: 2px 10px; border-radius: 6px; line-height: 1.5;" onclick="abrirModalDetalheOcupacao('${loc.id_unificado}')" title="Ver Detalhes">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </td>
                 <td><span class="badge bg-light text-dark border">${loc.modulo || 'N/A'}</span></td>
                 <td>
                     <div class="fw-medium">${loc.nome}</div>
                     <small class="text-muted">${loc.tipo} - ${loc.bloco || '-'}</small>
                 </td>
-                <td class="text-center">${loc.capacidade}</td>
-                <td class="text-center text-primary fw-bold">${ocupadas}</td>
-                <td class="text-center text-warning">${ociosas}</td>
+                <td class="text-center">${res.totalVagas}</td>
+                <td class="text-center text-primary fw-bold">${res.ocupadas}</td>
+                <td class="text-center text-warning">${res.ociosas}</td>
                 <td class="text-center">
                     <div class="progress" style="height: 6px; width: 60px; margin: 0 auto;">
                         <div class="progress-bar ${taxa > 80 ? 'bg-danger' : 'bg-success'}" role="progressbar" style="width: ${taxa}%"></div>
@@ -2685,8 +2659,8 @@ function renderizarRelatorioOcupacao() {
                     <span class="text-success">${parseFloat(loc.valor_diaria||0).toFixed(2)}</span> / 
                     <span class="text-muted">${parseFloat(loc.valor_diaria_ociosa||0).toFixed(2)}</span>
                 </td>
-                <td class="text-end text-success">R$ ${vOcup.toFixed(2)}</td>
-                <td class="text-end text-muted">R$ ${vOcio.toFixed(2)}</td>
+                <td class="text-end text-success">R$ ${res.vOcup.toFixed(2)}</td>
+                <td class="text-end text-muted">R$ ${res.vOcio.toFixed(2)}</td>
                 <td class="text-end fw-bold">R$ ${vTotal.toFixed(2)}</td>
             </tr>
         `;
@@ -2694,11 +2668,11 @@ function renderizarRelatorioOcupacao() {
 
     tfoot.innerHTML = `
         <tr>
-            <td colspan="2" class="text-end">TOTAL GERAL:</td>
+            <td colspan="3" class="text-end">TOTAL GERAL:</td>
             <td class="text-center">${totVagas}</td>
             <td class="text-center">${totOcup}</td>
             <td class="text-center">${totOcio}</td>
-            <td class="text-center">${(totOcup/totVagas*100).toFixed(1)}%</td>
+            <td class="text-center">${totVagas > 0 ? (totOcup/totVagas*100).toFixed(1) : 0}%</td>
             <td></td>
             <td class="text-end text-success">R$ ${totValOcup.toFixed(2)}</td>
             <td class="text-end text-muted">R$ ${totValOcio.toFixed(2)}</td>
@@ -2709,29 +2683,265 @@ function renderizarRelatorioOcupacao() {
     renderPagination(locaisFiltrados.length, currentPageOcupacao, 'pagination-ocupacao', 'changePageOcupacao');
 }
 
+// Tornar global para acesso via onclick
+window.abrirModalDetalheOcupacao = function(idUnificado) {
+    try {
+        console.log('[Detalhe] ID:', idUnificado);
+        
+        const modalEl = document.getElementById('modalDetalheOcupacao');
+        if (!modalEl) {
+            alert('Erro: Modal não encontrado no HTML!');
+            return;
+        }
+
+        const isQuarto = idUnificado.startsWith('q_');
+        const idRaw = idUnificado.split('_')[1];
+        const loc = isQuarto 
+            ? quartos.find(q => String(q.id) === idRaw) 
+            : republicas.find(r => String(r.id) === idRaw);
+        
+        if (!loc) {
+            alert('Erro: Local não encontrado!');
+            return;
+        }
+
+        // Títulos e Identificação
+        const nomeCompleto = isQuarto 
+            ? `Alojamento: ${loc.bloco || 'S/B'} - Quarto: ${loc.nome}`
+            : `República: ${loc.nome}`;
+
+        const titleEl = document.getElementById('detalhe-local-nome');
+        const periodEl = document.getElementById('detalhe-periodo-texto');
+        const printTitleEl = document.getElementById('print-local-nome');
+        const printPeriodEl = document.getElementById('print-periodo-texto');
+
+        if (titleEl) titleEl.textContent = nomeCompleto;
+        if (printTitleEl) printTitleEl.textContent = nomeCompleto;
+
+        const filterDataIni = document.getElementById('filter-relatorio-data')?.value || '';
+        const filterDataFim = document.getElementById('filter-relatorio-data-fim')?.value || '';
+        const filterModulo = document.getElementById('filter-relatorio-modulo')?.value || 'todos';
+
+        const formatData = (d) => d ? d.split('-').reverse().join('/') : '-';
+        const periodoTxt = filterDataFim 
+            ? `Período: ${formatData(filterDataIni)} até ${formatData(filterDataFim)}`
+            : `Snapshot: ${filterDataIni ? formatData(filterDataIni) : new Date().toLocaleDateString('pt-BR')}`;
+
+        if (periodEl) periodEl.textContent = periodoTxt;
+        if (printPeriodEl) printPeriodEl.textContent = periodoTxt;
+
+
+        const tbody = document.getElementById('lista-detalhe-ocupacao-tbody');
+        if (!tbody) {
+            alert('Erro: Tabela de detalhes não encontrada!');
+            return;
+        }
+        
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Carregando...</td></tr>';
+
+        // Lógica de Ocupantes
+        const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
+        const dStart = filterDataIni ? new Date(filterDataIni + 'T00:00:00') : new Date();
+        const dEnd = filterDataFim ? new Date(filterDataFim + 'T23:59:59') : new Date(dStart.getTime() + 86399000);
+
+        let listaDetalhe = [];
+        const alocsLocal = todasAlocacoes.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+
+        alocsLocal.forEach(aloc => {
+            const aStart = new Date(aloc.data_checkin);
+            const aEnd = aloc.data_checkout ? new Date(aloc.data_checkout) : new Date();
+            const iStart = new Date(Math.max(dStart, aStart));
+            const iEnd = new Date(Math.min(dEnd, aEnd));
+
+            if (iStart < iEnd) {
+                const func = funcionarios.find(f => f.id === aloc.id_funcionario);
+                if (!func) return;
+                
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                if (filterModulo !== 'todos' && (!mf || mf.modulo !== filterModulo)) return;
+
+                let count = 0;
+                if (filterDataFim && filterDataIni !== filterDataFim) {
+                    if (!(aStart.toDateString() === aEnd.toDateString() && aloc.data_checkout)) {
+                        let current = new Date(iStart);
+                        current.setHours(23, 59, 59, 999);
+                        while (current < iEnd) {
+                            count++;
+                            current.setDate(current.getDate() + 1);
+                        }
+                    }
+                } else {
+                    const dBase = filterDataIni ? new Date(filterDataIni + 'T23:59:59') : new Date();
+                    if (aStart <= dBase && (aloc.data_checkout ? aEnd >= dBase : true)) {
+                        count = 1;
+                    }
+                }
+
+                if (count > 0 || (!filterDataFim && !filterDataIni)) {
+                    listaDetalhe.push({
+                        nome: func.nome,
+                        modulo: mf ? mf.modulo : 'N/A',
+                        funcao: mf ? mf.funcao : 'N/A',
+                        checkin: aStart.toLocaleDateString('pt-BR'),
+                        checkout: aloc.data_checkout ? aEnd.toLocaleDateString('pt-BR') : 'Ativo',
+                        diarias: count,
+                        valor: count * (loc.valor_diaria || 0)
+                    });
+                }
+            }
+        });
+
+        tbody.innerHTML = '';
+        const tfoot = document.getElementById('lista-detalhe-ocupacao-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
+
+        if (listaDetalhe.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nenhuma ocupação registrada.</td></tr>';
+        } else {
+            let totalDiarias = 0;
+            let totalValor = 0;
+
+            listaDetalhe.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(d => {
+                totalDiarias += d.diarias;
+                totalValor += d.valor;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-4 fw-medium text-nowrap">${d.nome}</td>
+                        <td class="small text-muted">${d.modulo} / ${d.funcao}</td>
+                        <td class="text-center small">${d.checkin}</td>
+                        <td class="text-center small">${d.checkout}</td>
+                        <td class="text-center fw-bold text-primary">${d.diarias}</td>
+                        <td class="text-end pe-4 fw-bold">R$ ${d.valor.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            if (tfoot) {
+                tfoot.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-end ps-4">TOTAIS DO LOCAL:</td>
+                        <td class="text-center text-primary">${totalDiarias}</td>
+                        <td class="text-end pe-4">R$ ${totalValor.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Abrir Modal
+        if (typeof bootstrap !== 'undefined') {
+            const myModal = new bootstrap.Modal(modalEl);
+            myModal.show();
+        } else {
+            alert('Erro: Biblioteca Bootstrap (JS) não encontrada!');
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert('Erro fatal ao processar detalhes: ' + err.message);
+    }
+}
+
+window.exportarDetalheOcupacaoExcel = function() {
+    const table = document.getElementById('tabela-detalhe-export');
+    const nomeLocal = document.getElementById('detalhe-local-nome').textContent.replace('Detalhes: ', '');
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Detalhes" });
+    XLSX.writeFile(wb, `Detalhe_Ocupacao_${nomeLocal.replace(/ /g, '_')}.xlsx`);
+}
+
+window.imprimirDetalheOcupacao = function() {
+    window.print();
+}
+
+
+
+// Função centralizada de cálculo para reuso
+function calcularDadosLocal(loc, filterDataIni, filterDataFim, filterModulo, todasAlocacoes) {
+    const isQuarto = loc.tipo === 'Alojamento';
+    const isPeriodo = filterDataIni && filterDataFim && filterDataIni !== filterDataFim;
+    
+    let totalVagas = loc.capacidade;
+    let ocupadas = 0;
+
+    if (isPeriodo) {
+        const dStart = new Date(filterDataIni + 'T00:00:00');
+        const dEnd = new Date(filterDataFim + 'T23:59:59');
+        const diffDays = Math.max(1, Math.ceil(Math.abs(dEnd - dStart) / (1000 * 60 * 60 * 24)));
+        totalVagas = loc.capacidade * diffDays;
+
+        let alocsLocal = todasAlocacoes.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
+        
+        if (filterModulo !== 'todos') {
+            alocsLocal = alocsLocal.filter(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            });
+        }
+
+        alocsLocal.forEach(aloc => {
+            const aStart = new Date(aloc.data_checkin);
+            const aEnd = aloc.data_checkout ? new Date(aloc.data_checkout) : new Date();
+            const iStart = new Date(Math.max(dStart, aStart));
+            const iEnd = new Date(Math.min(dEnd, aEnd));
+            
+            if (iStart < iEnd) {
+                // Regra: se check-in e check-out no mesmo dia na vida real = 0 diárias
+                if (aStart.toDateString() === aEnd.toDateString() && aloc.data_checkout) return;
+                
+                let count = 0;
+                let current = new Date(iStart);
+                current.setHours(23, 59, 59, 999);
+                while (current < iEnd) {
+                    count++;
+                    current.setDate(current.getDate() + 1);
+                }
+                ocupadas += count;
+            }
+        });
+    } else {
+        const dBase = filterDataIni ? new Date(filterDataIni + 'T23:59:59') : new Date();
+        const alocsNoLocal = todasAlocacoes.filter(a => {
+            if (isQuarto ? a.id_quarto !== loc.id : a.id_republica !== loc.id) return false;
+            const dIn = new Date(a.data_checkin);
+            const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
+            return dIn <= dBase && (!dOut || dOut >= dBase);
+        });
+
+        if (filterModulo !== 'todos') {
+            ocupadas = alocsNoLocal.filter(a => {
+                const func = funcionarios.find(f => f.id === a.id_funcionario);
+                if (!func) return false;
+                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                return mf && mf.modulo === filterModulo;
+            }).length;
+        } else {
+            ocupadas = alocsNoLocal.length;
+        }
+    }
+
+    const ociosas = Math.max(0, totalVagas - ocupadas);
+    const vOcup = ocupadas * (loc.valor_diaria || 0);
+    const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+
+    return { totalVagas, ocupadas, ociosas, vOcup, vOcio };
+}
+
+
+
 window.changePageOcupacao = function(page) {
     currentPageOcupacao = page;
     renderizarRelatorioOcupacao();
 }
 
 window.exportarRelatorioOcupacaoExcel = function() {
-    // Obter os mesmos filtros da tela
-    const filterData = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterDataIni = document.getElementById('filter-relatorio-data')?.value || '';
+    const filterDataFim = document.getElementById('filter-relatorio-data-fim')?.value || '';
     const filterModulo = document.getElementById('filter-relatorio-modulo')?.value || 'todos';
     const filterTipo = document.getElementById('filter-relatorio-tipo')?.value || 'todos';
     const filterBusca = document.getElementById('filter-relatorio-busca')?.value.toLowerCase() || '';
 
-    // Determinar Alocações para a Data de Referência
-    let alocsRef = alocacoesAtivas;
-    if (filterData) {
-        const dBase = new Date(filterData + 'T23:59:59');
-        const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
-        alocsRef = todasAlocacoes.filter(a => {
-            const dIn = new Date(a.data_checkin);
-            const dOut = a.data_checkout ? new Date(a.data_checkout) : null;
-            return dIn <= dBase && (!dOut || dOut >= dBase);
-        });
-    }
+    const todasAlocacoes = [...alocacoesAtivas, ...alocacoesHistorico];
 
     // Unificar locais e aplicar filtros
     let locaisFiltrados = [
@@ -2740,7 +2950,11 @@ window.exportarRelatorioOcupacaoExcel = function() {
     ];
 
     if (filterTipo !== 'todos') {
-        locaisFiltrados = locaisFiltrados.filter(l => l.tipo.toLowerCase() === filterTipo.toLowerCase());
+        locaisFiltrados = locaisFiltrados.filter(l => {
+            const t = l.tipo.toLowerCase();
+            if (filterTipo === 'republica') return t === 'república' || t === 'republica';
+            return t === filterTipo.toLowerCase();
+        });
     }
     if (filterBusca) {
         locaisFiltrados = locaisFiltrados.filter(l => 
@@ -2748,10 +2962,12 @@ window.exportarRelatorioOcupacaoExcel = function() {
             (l.bloco && l.bloco.toLowerCase().includes(filterBusca))
         );
     }
+    
     if (filterModulo !== 'todos') {
         locaisFiltrados = locaisFiltrados.filter(l => {
-            const alocsLocal = alocsRef.filter(a => l.tipo === 'Alojamento' ? a.id_quarto === l.id : a.id_republica === l.id);
-            return alocsLocal.some(a => {
+            const isQuarto = l.tipo === 'Alojamento';
+            return todasAlocacoes.some(a => {
+                if (isQuarto ? a.id_quarto !== l.id : a.id_republica !== l.id) return false;
                 const func = funcionarios.find(f => f.id === a.id_funcionario);
                 if (!func) return false;
                 const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
@@ -2761,44 +2977,30 @@ window.exportarRelatorioOcupacaoExcel = function() {
     }
 
     const data = locaisFiltrados.map(loc => {
-        const isQuarto = loc.tipo === 'Alojamento';
-        let alocs = alocsRef.filter(a => isQuarto ? a.id_quarto === loc.id : a.id_republica === loc.id);
-        
-        if (filterModulo !== 'todos') {
-            alocs = alocs.filter(a => {
-                const func = funcionarios.find(f => f.id === a.id_funcionario);
-                if (!func) return false;
-                const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
-                return mf && mf.modulo === filterModulo;
-            });
-        }
-
-        const ocupadas = alocs.length;
-        const ociosas = Math.max(0, loc.capacidade - ocupadas);
-        const vOcup = ocupadas * (loc.valor_diaria || 0);
-        const vOcio = ociosas * (loc.valor_diaria_ociosa || 0);
+        const res = calcularDadosLocal(loc, filterDataIni, filterDataFim, filterModulo, todasAlocacoes);
 
         return {
             'Módulo': loc.modulo || 'N/A',
             'Tipo': loc.tipo,
             'Local': loc.nome,
             'Bloco/Ref': loc.bloco || '-',
-            'Total Vagas': loc.capacidade,
-            'Ocupadas': ocupadas,
-            'Ociosas': ociosas,
-            'Taxa Ocup. (%)': loc.capacidade > 0 ? (ocupadas / loc.capacidade * 100).toFixed(1) : 0,
-            'Valor Diária': loc.valor_diaria,
-            'Total Ocupado (R$)': vOcup,
-            'Total Ocioso (R$)': vOcio,
-            'Resumo Total (R$)': vOcup + vOcio
+            'Total Vagas/Diárias': res.totalVagas,
+            'Ocupadas': res.ocupadas,
+            'Ociosas': res.ociosas,
+            'Taxa Ocup. (%)': res.totalVagas > 0 ? (res.ocupadas / res.totalVagas * 100).toFixed(1) : 0,
+            'Valor Diária (Ocup)': loc.valor_diaria,
+            'Valor Diária (Ocio)': loc.valor_diaria_ociosa,
+            'Total Ocupado (R$)': res.vOcup,
+            'Total Ocioso (R$)': res.vOcio,
+            'Resumo Total (R$)': res.vOcup + res.vOcio
         };
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Ocupação");
-    XLSX.writeFile(wb, `Relatorio_Ocupacao_${filterData || new Date().toISOString().slice(0,10)}.xlsx`);
-    showToast('Relatório exportado com filtros!', 'success');
+    XLSX.writeFile(wb, `Relatorio_Ocupacao_${filterDataIni || new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('Relatório exportado!', 'success');
 }
 
 // Funções de Gerenciamento de Alocações (Transferir e Excluir)

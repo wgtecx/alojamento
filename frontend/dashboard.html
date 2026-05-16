@@ -24,6 +24,66 @@
 
 <body>
 
+    <!-- Modal Detalhe Ocupação -->
+    <div class="modal fade" id="modalDetalheOcupacao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-light border-0">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="detalhe-local-nome">Detalhes do Local</h5>
+                        <small class="text-muted" id="detalhe-periodo-texto"></small>
+                    </div>
+                    <div class="ms-auto d-flex gap-2 pe-3">
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="exportarDetalheOcupacaoExcel()">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="imprimirDetalheOcupacao()">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="max-height: 450px; overflow-y: auto;" id="area-impressao-detalhe">
+                    <!-- Cabeçalho exclusivo para Impressão -->
+                    <div id="print-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="fw-bold mb-1">AlocaPro - Relatório de Ocupação Detalhado</h3>
+                                <h5 id="print-local-nome" class="mb-1"></h5>
+                                <p id="print-periodo-texto" class="text-muted mb-0"></p>
+                            </div>
+                            <img src="logo.png" alt="Logo" style="height: 60px;">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabela-detalhe-export">
+                            <thead class="table-light">
+                                <tr style="font-size: 0.75rem;">
+                                    <th class="ps-4">Funcionário</th>
+                                    <th>Módulo / Função</th>
+                                    <th class="text-center">Check-in</th>
+                                    <th class="text-center">Check-out</th>
+                                    <th class="text-center">Diárias</th>
+                                    <th class="text-end pe-4">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-detalhe-ocupacao-tbody">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                            <tfoot id="lista-detalhe-ocupacao-tfoot" class="table-light fw-bold">
+                                <!-- Totais -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="app-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -903,8 +963,12 @@
 
                 <div class="row g-3 mb-4 align-items-end">
                     <div class="col-md-2">
-                        <label class="form-label small text-muted">Data Base</label>
+                        <label class="form-label small text-muted">Início</label>
                         <input type="date" class="form-control shadow-sm" id="filter-relatorio-data" onchange="renderizarRelatorioOcupacao()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Fim (Opcional)</label>
+                        <input type="date" class="form-control shadow-sm" id="filter-relatorio-data-fim" onchange="renderizarRelatorioOcupacao()">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small text-muted">Módulo</label>
@@ -931,7 +995,8 @@
                         <table class="table table-hover align-middle mb-0" id="tabela-ocupacao">
                             <thead class="table-light">
                                 <tr style="font-size: 0.75rem;">
-                                    <th class="border-0 rounded-start">Módulo</th>
+                                    <th class="border-0 rounded-start"></th>
+                                    <th class="border-0">Módulo</th>
                                     <th class="border-0">Local</th>
                                     <th class="border-0 text-center">Total Vagas</th>
                                     <th class="border-0 text-center">Ocupadas</th>
@@ -945,7 +1010,7 @@
                             </thead>
                             <tbody id="lista-ocupacao-tbody">
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">Carregando dados...</td>
+                                    <td colspan="11" class="text-center text-muted py-4">Carregando dados...</td>
                                 </tr>
                             </tbody>
                             <tfoot class="table-light fw-bold" id="lista-ocupacao-tfoot">
@@ -1287,6 +1352,8 @@
             </div>
         </div>
     </div>
+    
+
     <style>
         .legend-item {
             cursor: pointer;
@@ -1305,7 +1372,45 @@
             font-weight: bold;
             color: #0d6efd;
         }
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .clickable-row:hover {
+            background-color: rgba(13, 110, 253, 0.05) !important;
+        }
+
+        @media print {
+            @page {
+                margin: 0.5cm;
+            }
+            body * { visibility: hidden; }
+            #area-impressao-detalhe, #area-impressao-detalhe * { visibility: visible !important; }
+            #area-impressao-detalhe { 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100% !important; 
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .modal, .modal-dialog, .modal-content { 
+                position: static !important;
+                display: block !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .modal-header, .modal-footer, .btn-close, .btn { display: none !important; }
+            
+            #print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; width: 100%; }
+            .table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; }
+            .table th, .table td { border: 1px solid #333 !important; padding: 6px !important; font-size: 10pt !important; word-wrap: break-word; }
+            .table-light { background-color: #eee !important; -webkit-print-color-adjust: exact; }
+        }
+        #print-header { display: none; }
     </style>
+
+
 </body>
 
 </html>
