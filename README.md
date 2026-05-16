@@ -19,7 +19,7 @@
 *   **Filtros de Relatório:** Recortes detalhados por Módulo, Tipo de Local e busca por nome, com exportação inteligente para Excel (respeita todos os filtros ativos).
 *   **Gestão de Mobilidade (Transferência)**: Mova funcionários entre quartos ou alojamentos com um clique, com atualização automática de check-out/check-in e disparo opcional de nova localização via WhatsApp, além do **reenvio manual a qualquer momento** via ícone no card.
 *   **Segurança e Auditoria**: Trava de segurança de 1 hora para exclusão de registros e validação de CPF duplicado, impedindo cadastros repetidos e protegendo o histórico.
-*   **Filtros Geográficos e Operacionais**: Filtros avançados por Bloco/República e agora por **Módulo**, permitindo identificar rapidamente a ocupação de setores específicos no mapa.
+*   **Filtros Geográficos e Operacionais**: Filtros avançados por Bloco/República e agora por **Módulo (Baseado em Funcionário)**, permitindo identificar exatamente onde os colaboradores de cada setor estão alocados no mapa.
 *   **Integridade e Usabilidade**: Máscaras inteligentes de entrada e validação algorítmica rigorosa de CPF (bloqueio de números repetidos e formatos inválidos), além de alertas visuais na tabela para dados inconsistentes.
 *   **Correção de Erros (Carência Zero)**: Detecção inteligente de check-outs no mesmo dia do check-in com aplicação automática de valor zero, ideal para correções rápidas de lançamento.
 *   **Visão Analítica:** Resumos tabulares de ocupação por módulo e alertas de locais críticos (mais cheios) para tomada de decisão rápida.
@@ -31,7 +31,7 @@
     *   **Check-in Rápido:** Clique em uma vaga livre para alocar um funcionário instantaneamente.
     *   **Check-out Rápido:** Clique no nome de um funcionário para liberar a vaga e calcular o custo da estadia.
 *   **Localizador de Funcionários:** Campo de busca inteligente para encontrar colaboradores por Nome ou CPF, destacando sua localização exata no mapa.
-*   **Filtro por Módulo:** Novo seletor que permite isolar a visualização dos locais alocados para módulos específicos (ex: Mineração, Administrativo), facilitando a gestão por setor.
+*   **Filtro por Módulo de Alocação:** Novo seletor que isola a visualização dos locais que contêm funcionários de módulos específicos (ex: Mineração, Administrativo), permitindo uma gestão visual focada na força de trabalho.
 *   **Comunicação Integrada (WhatsApp):** Ícone de reenvio de mensagem de alocação diretamente no card do funcionário, permitindo enviar os detalhes da estadia novamente com um clique.
 *   **Resumo Dinâmico por Gênero:** Estatísticas de ocupação por gênero filtradas automaticamente de acordo com o bloco ou república selecionada.
 *   **Restrições de Gênero:** Controle visual de quartos masculinos, femininos ou de gênero não especificado.

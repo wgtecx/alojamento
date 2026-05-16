@@ -517,14 +517,33 @@ function renderizarMapaAlojamentos() {
 
         let quartosDoBloco = quartos.filter(q => q.bloco === bloco);
         if (filtroModulo !== 'todos') {
-            quartosDoBloco = quartosDoBloco.filter(q => q.modulo === filtroModulo);
+            quartosDoBloco = quartosDoBloco.filter(q => {
+                const alocsNoQuarto = alocacoesAtivas.filter(a => a.id_quarto === q.id);
+                return alocsNoQuarto.some(aloc => {
+                    const f = funcionarios.find(func => func.id === aloc.id_funcionario);
+                    if (!f) return false;
+                    const mf = modulosFuncoes.find(m => m.id === f.id_modulo_funcao);
+                    return mf && mf.modulo === filtroModulo;
+                });
+            });
         }
 
         quartosDoBloco.forEach(quarto => {
             const isAtivo = quarto.ativo !== false;
-            const alocacoesQuarto = alocacoesAtivas.filter(a => a.id_quarto === quarto.id);
-            const ocupacaoAtual = alocacoesQuarto.length;
+            const alocacoesTotal = alocacoesAtivas.filter(a => a.id_quarto === quarto.id);
+            const ocupacaoAtual = alocacoesTotal.length;
             const capacidade = parseInt(quarto.capacidade);
+
+            // Filtrar para exibição se módulo ativo
+            let alocsParaExibir = alocacoesTotal;
+            if (filtroModulo !== 'todos') {
+                alocsParaExibir = alocacoesTotal.filter(aloc => {
+                    const f = funcionarios.find(func => func.id === aloc.id_funcionario);
+                    if (!f) return false;
+                    const mf = modulosFuncoes.find(m => m.id === f.id_modulo_funcao);
+                    return mf && mf.modulo === filtroModulo;
+                });
+            }
 
             // Somar estatísticas de gênero
             const gen = quarto.sexo_permitido || 'A';
@@ -535,7 +554,7 @@ function renderizarMapaAlojamentos() {
 
             // Se houver busca ativa, verificar se este quarto possui o funcionário
             if (searchMap) {
-                const temFuncionario = alocacoesQuarto.some(aloc => {
+                const temFuncionario = alocacoesTotal.some(aloc => {
                     const func = funcionarios.find(f => f.id === aloc.id_funcionario);
                     return func && (func.nome.toLowerCase().includes(searchMap) || (func.cpf && func.cpf.includes(searchMap)));
                 });
@@ -578,14 +597,19 @@ function renderizarMapaAlojamentos() {
                 `;
             } else {
                 // Funcionários reais
-                alocacoesQuarto.forEach(aloc => {
+                alocsParaExibir.forEach(aloc => {
                     const func = funcionarios.find(f => f.id === aloc.id_funcionario);
                     if (func) {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeQuarto = quarto.nome.replace(/'/g, "\\'");
+                        
+                        // Buscar função para o tooltip
+                        const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                        const funcDesc = mf ? `Função: ${mf.funcao}` : 'Função não informada';
+
                         listaHTML += `
                             <li class="employee-item d-flex justify-content-between align-items-center">
-                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')">
+                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${quarto.id}', 'q')" title="${funcDesc}" style="cursor: pointer;">
                                     <i class="bi bi-person"></i> ${func.nome}
                                 </div>
                                 <div class="btn-group ms-2">
@@ -710,7 +734,15 @@ function renderizarMapaRepublicas() {
         let hasMatchesRep = false;
         let quartosDaRep = republicas.filter(r => r.nome === nomeRep);
         if (filtroModuloRep !== 'todos') {
-            quartosDaRep = quartosDaRep.filter(r => r.modulo === filtroModuloRep);
+            quartosDaRep = quartosDaRep.filter(r => {
+                const alocsNoQuarto = alocacoesAtivas.filter(a => a.id_republica === r.id);
+                return alocsNoQuarto.some(aloc => {
+                    const f = funcionarios.find(func => func.id === aloc.id_funcionario);
+                    if (!f) return false;
+                    const mf = modulosFuncoes.find(m => m.id === f.id_modulo_funcao);
+                    return mf && mf.modulo === filtroModuloRep;
+                });
+            });
         }
         
         if (quartosDaRep.length === 0) return;
@@ -739,9 +771,20 @@ function renderizarMapaRepublicas() {
 
         quartosDaRep.forEach(republica => {
             const isAtivo = republica.ativo !== false;
-            const alocacoesRep = alocacoesAtivas.filter(a => a.id_republica === republica.id);
-            const ocupacaoAtual = alocacoesRep.length;
+            const alocacoesTotal = alocacoesAtivas.filter(a => a.id_republica === republica.id);
+            const ocupacaoAtual = alocacoesTotal.length;
             const capacidade = parseInt(republica.capacidade);
+
+            // Filtrar para exibição se módulo ativo
+            let alocsParaExibir = alocacoesTotal;
+            if (filtroModuloRep !== 'todos') {
+                alocsParaExibir = alocacoesTotal.filter(aloc => {
+                    const f = funcionarios.find(func => func.id === aloc.id_funcionario);
+                    if (!f) return false;
+                    const mf = modulosFuncoes.find(m => m.id === f.id_modulo_funcao);
+                    return mf && mf.modulo === filtroModuloRep;
+                });
+            }
 
             // Somar estatísticas de gênero
             const gen = republica.sexo_permitido || 'A';
@@ -752,7 +795,7 @@ function renderizarMapaRepublicas() {
 
             // Se houver busca ativa, verificar se esta república possui o funcionário
             if (searchMapRep) {
-                const temFuncionario = alocacoesRep.some(aloc => {
+                const temFuncionario = alocacoesTotal.some(aloc => {
                     const func = funcionarios.find(f => f.id === aloc.id_funcionario);
                     return func && (func.nome.toLowerCase().includes(searchMapRep) || (func.cpf && func.cpf.includes(searchMapRep)));
                 });
@@ -792,14 +835,19 @@ function renderizarMapaRepublicas() {
                     </li>
                 `;
             } else {
-                alocacoesRep.forEach(aloc => {
+                alocsParaExibir.forEach(aloc => {
                     const func = funcionarios.find(f => f.id === aloc.id_funcionario);
                     if (func) {
                         const safeNomeFunc = func.nome.replace(/'/g, "\\'");
                         const safeNomeRep = republica.nome.replace(/'/g, "\\'");
+
+                        // Buscar função para o tooltip
+                        const mf = modulosFuncoes.find(m => m.id === func.id_modulo_funcao);
+                        const funcDesc = mf ? `Função: ${mf.funcao}` : 'Função não informada';
+
                         listaHTML += `
                             <li class="employee-item d-flex justify-content-between align-items-center">
-                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')">
+                                <div class="flex-grow-1" onclick="abrirModalCheckoutRapido('${aloc.id}', '${safeNomeFunc}', '${republica.id}', 'r')" title="${funcDesc}" style="cursor: pointer;">
                                     <i class="bi bi-person"></i> ${func.nome}
                                 </div>
                                 <div class="btn-group ms-2">
