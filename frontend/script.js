@@ -2806,9 +2806,9 @@ window.abrirModalDetalheOcupacao = function(idUnificado) {
 
         if (valorOcioso > 0) {
             listaDetalhe.push({
-                nome: 'Custo de Ociosidade (Vagas Livres)',
-                modulo: 'N/A',
-                funcao: 'Vagas não ocupadas',
+                nome: 'Vagas Ociosas (Custo)',
+                modulo: '-',
+                funcao: 'Ociosidade',
                 checkin: '-',
                 checkout: '-',
                 diarias: diariasOciosas,
